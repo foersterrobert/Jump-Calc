@@ -1,7 +1,8 @@
-import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'dart:async';
 
 void main() {
   runApp(const MyApp());
@@ -35,10 +36,11 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> answerQuestion() async {
     final response = await http.get(Uri.parse('http://jumpandcalc.com/answer_question'));
+    final responseJson = jsonDecode(response.body);
 
     if (response.statusCode == 200) {
       setState(() {
-        _counter = int.parse(response.body);
+        _counter = responseJson['counter'];
       });
     } else {
       throw Exception('Failed to load question');
@@ -47,10 +49,11 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> getState() async {
     final response = await http.get(Uri.parse('http://jumpandcalc.com/get_state'));
+    final responseJson = jsonDecode(response.body);
 
     if (response.statusCode == 200) {
       setState(() {
-        _counter = int.parse(response.body);
+        _counter = responseJson['counter'];
       });
     } else {
       throw Exception('Failed to load question');
