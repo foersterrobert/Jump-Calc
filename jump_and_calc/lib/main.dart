@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
 void main() {
   runApp(const MyApp());
@@ -14,44 +15,46 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const MyHomePage(),
     );
   }
 }
 
 class MyHomePage extends StatefulWidget {
-  const MyHomePage({Key? key, required this.title}) : super(key: key);
-  final String title;
+  const MyHomePage({Key? key}) : super(key: key);
 
   @override
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  bool _gameStarted = false;
+  int _counter = 0;
 
   @override
   Widget build(BuildContext context) {
-    Widget card = 
+
+    Widget test = GestureDetector(
+      onTap: () {
+        _counter++;
+      },
+      child: Container(
+        width: 200,
+        height: 200,
+        color: Colors.red,
+        child: Center(
+          child: Text(
+            '$_counter',
+            style: Theme.of(context).textTheme.headline4,
+          ),
+        ),
+      ),
+    );
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.title),
+        title: const Text("Jump&Calc"),
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '0',
-              style: Theme.of(context).textTheme.headline4,
-            ),
-          ],
-        ),
-      ),
+      body: test,
     );
   }
 }
