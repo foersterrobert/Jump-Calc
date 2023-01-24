@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
@@ -29,13 +31,50 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
+  Timer? _timer;
+
+  Future<void> answerQuestion() async {
+    final response = await http.get(Uri.parse('http://jumpandcalc.com/answer_question'));
+
+    if (response.statusCode == 200) {
+      setState(() {
+        _counter = int.parse(response.body);
+      });
+    } else {
+      throw Exception('Failed to load question');
+    }
+  }
+
+  Future<void> getState() async {
+    final response = await http.get(Uri.parse('http://jumpandcalc.com/get_state'));
+
+    if (response.statusCode == 200) {
+      setState(() {
+        _counter = int.parse(response.body);
+      });
+    } else {
+      throw Exception('Failed to load question');
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(const Duration(seconds: 1), (Timer t) => getState());
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
 
     Widget test = GestureDetector(
       onTap: () {
-        _counter++;
+        answerQuestion();
       },
       child: Container(
         width: 200,
