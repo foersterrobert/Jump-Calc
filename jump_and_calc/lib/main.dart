@@ -35,26 +35,31 @@ class _MyHomePageState extends State<MyHomePage> {
   Timer? _timer;
 
   Future<void> answerQuestion() async {
-    final response = await http.get(Uri.parse('http://jumpandcalc.com/answer_question'));
+    final response = await http.put(Uri.parse('http://192.168.1.14:5000/player/1166/4028/1'));
     final responseJson = jsonDecode(response.body);
 
     if (response.statusCode == 200) {
       setState(() {
-        _counter = responseJson['counter'];
+        _counter = responseJson['score'];
       });
     } else {
       throw Exception('Failed to load question');
     }
   }
 
+  Future<void> createGame() async {
+    final response = await http.post(Uri.parse('http://localhost:5000/game/0/'));
+  }
+
   Future<void> getState() async {
-    final response = await http.get(Uri.parse('http://jumpandcalc.com/get_state'));
+    final response = await http.get(Uri.parse('http://192.168.1.14:5000/game/1166/robs'));
     final responseJson = jsonDecode(response.body);
 
     if (response.statusCode == 200) {
-      setState(() {
-        _counter = responseJson['counter'];
-      });
+      print(responseJson);
+      // setState(() {
+      //   _counter = responseJson['counter'];
+      // });
     } else {
       throw Exception('Failed to load question');
     }
@@ -74,6 +79,31 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    Widget createGameWidget = Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        const Text(
+          'Create Game',
+          style: TextStyle(fontSize: 20),
+        ),
+        const SizedBox(height: 20),
+        const SizedBox(height: 20),
+        const TextField(
+          decoration: InputDecoration(
+            border: OutlineInputBorder(),
+            labelText: 'Player Name',
+          ),
+        ),
+        const SizedBox(height: 20),
+        ElevatedButton(
+          onPressed: () {
+            createGame();
+          },
+          child: const Text('Create Game'),
+        ),
+      ],
+    );
+
 
     Widget test = GestureDetector(
       onTap: () {

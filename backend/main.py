@@ -3,28 +3,29 @@ import random
 from flask import Flask
 from flask_restful import Api, Resource, reqparse, abort
 from flask_sqlalchemy import SQLAlchemy
+import requests
 
 app = Flask(__name__)
 api = Api(app)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
 db = SQLAlchemy(app)
 
-def generate_questions():
-    questions = []
-    for i in range(10):
-        question = {
-            "question": "Question {}".format(i),
-            "answers": ["Answer {}".format(i) for i in range(4)],
-            "correct": random.randint(0, 3)
+# def generate_questions():
+#     questions = []
+#     for i in range(10):
+#         question = {
+#             "question": "Question {}".format(i),
+#             "answers": ["Answer {}".format(i) for i in range(4)],
+#             "correct": random.randint(0, 3)
                                                             
-        }
-        questions.append(question)
-    return questions
+#         }
+#         questions.append(question)
+#     return questions
 
 class Game(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     started = db.Column(db.Boolean, default=False)
-    questions = db.Column(db.JSON, default=[])
+    # questions = db.Column(db.JSON, default=[])
     
     def __repr__(self):
         return f"Game(id={self.id})"
@@ -40,15 +41,15 @@ class Player(db.Model):
 
     def __repr__(self):
         return f"Player(id={self.id}, name={self.name}, score={self.score})"
-    
+
 class GameResource(Resource):
     ### Create Game
-    def post(self, player_name):
+    def post(self, game_id, player_name):
         while True:
             game_id = random.randint(1000, 9999)
             if Game.query.filter_by(id=game_id).first() is None:
                 break
-        game = Game(id=game_id, questions=generate_questions())
+        game = Game(id=game_id) #questions=generate_questions())
 
         while True:
             player_id = random.randint(1000, 9999)
@@ -88,7 +89,7 @@ class GameResource(Resource):
         }
     
     ### Start Game
-    def path(self, game_id):
+    def path(self, game_id, player_name):
         game = Game.query.filter_by(id=game_id).first()
         if game is None:
             return {
@@ -101,7 +102,7 @@ class GameResource(Resource):
         }
     
     ### Get Game
-    def get(self, game_id):
+    def get(self, game_id, player_name):
         game = Game.query.filter_by(id=game_id).first()
         if game is None:
             return {
@@ -109,15 +110,15 @@ class GameResource(Resource):
             }, 404
         return {
             "game_id": game.id,
-            "players": game.players,
-            "questions": game.questions,
-            "state": game.state
+            # "players": game.players,
+            # "questions": game.questions,
+            # "state": game.state
         }
 
 
 class PlayerResource(Resource):
     ### Get Questions
-    def get(self, game_id):
+    def get(self, game_id, player_id, answer):
         game = Game.query.filter_by(id=game_id).first()
         if game is None:
             return {
@@ -128,7 +129,7 @@ class PlayerResource(Resource):
         }
 
     ### Answer Question
-    def put(self, player_id, answer):
+    def put(self, game_id, player_id, answer):
         player = Player.query.filter_by(id=player_id).first()
         if player is None:
             return {
@@ -136,25 +137,27 @@ class PlayerResource(Resource):
             }, 404
 
         game = Game.query.filter_by(id=player.game_id).first()
-        if game is None:
-            return {
-                "error": "game not found"
-            }, 404
+        # if game is None:
+        #     return {
+        #         "error": "game not found"
+        #     }, 404
 
-        if game.state != "started":
-            return {
-                "error": "game not started"
-            }, 400
+        # if game.started != True:
+        #     return {
+        #         "error": "game not started"
+        #     }, 400
 
-        if player.alive is False:
-            return {
-                "error": "player is dead"
-            }, 400
+        # if player.alive is False:
+        #     return {
+        #         "error": "player is dead"
+        #     }, 400
 
-        if game.questions[player.score]["correct"] == answer:
-            player.score += 1
-        else:
-            player.alive = False
+        # if game.questions[player.score]["correct"] == answer:
+        #     player.score += 1
+        # else:
+        #     player.alive = False
+
+        player.score += 1
 
         db.session.commit()
         return {
@@ -163,8 +166,10 @@ class PlayerResource(Resource):
             "alive": player.alive
         }
 
-api.add_resource(GameResource, "/game/<int:game_id>", "/game/<string:player_name>")
-api.add_resource(PlayerResource, "/game/<int:game_id>/player/<int:player_id>", "/game/<int:game_id>/player/<int:player_id>/<string:answer>")
+api.add_resource(GameResource, "/game/<int:game_id>/<string:player_name>")
+api.add_resource(PlayerResource, "/player/<int:game_id>/<int:player_id>/<int:answer>")
 
 if __name__ == '__main__':
-    app.run()
+    with app.app_context():
+        db.create_all()
+    app.run(host='0.0.0.0', port=5000, debug=True)
