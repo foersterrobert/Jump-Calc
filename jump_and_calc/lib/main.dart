@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:async';
@@ -33,6 +32,22 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
   Timer? _timer;
+  String _locigalState = 'NoGame';
+  int _gameId = 0;
+  int _playerId = 0;
+  String _playerName = '';
+
+  Future<void> startGame() async {
+    final response = await http.post(Uri.parse('http://localhost:5000/game/0/'));
+    
+    if (response.statusCode == 200) {
+      setState(() {
+        _locigalState = 'GameStarted';
+      });
+    } else {
+      throw Exception('Failed to load question');
+    }
+  }
 
   Future<void> answerQuestion() async {
     final response = await http.put(Uri.parse('http://192.168.1.14:5000/player/1166/4028/1'));
@@ -45,10 +60,6 @@ class _MyHomePageState extends State<MyHomePage> {
     } else {
       throw Exception('Failed to load question');
     }
-  }
-
-  Future<void> createGame() async {
-    final response = await http.post(Uri.parse('http://localhost:5000/game/0/'));
   }
 
   Future<void> getState() async {
@@ -79,54 +90,146 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    Widget createGameWidget = Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
+    Widget quizBlock = ListView(
       children: [
-        const Text(
-          'Create Game',
-          style: TextStyle(fontSize: 20),
-        ),
-        const SizedBox(height: 20),
-        const SizedBox(height: 20),
-        const TextField(
-          decoration: InputDecoration(
+        Text('$_gameId'),
+        Text('$_playerId'),
+        Text(_playerName),
+        GestureDetector(
+          onTap: () {
+            answerQuestion();
+          },
+          child: Container(
+            width: 200,
+            height: 200,
+            color: Colors.red,
+            child: Center(
+              child: Text(
+                '$_counter',
+                style: Theme.of(context).textTheme.headline4,
+              ),
+            ),
+          ),
+        )
+      ],
+    );
+
+    return Scaffold(
+      body: ListView(
+        children: [
+          if (_locigalState == 'NoGame') MenuForm(
+            onGameCreated: (gameId, playerId, playerName) {
+              setState(() {
+                _locigalState = 'GameCreated';
+                _gameId = gameId;
+                _playerId = playerId;
+                _playerName = playerName;
+              });
+            },
+            onGameJoined: (gameId, playerId, playerName) {
+              setState(() {
+                _locigalState = 'GameJoined';
+                _gameId = gameId;
+                _playerId = playerId;
+                _playerName = playerName;
+              });
+            },
+          ),
+          if (_locigalState == 'GameCreated') ElevatedButton(
+            onPressed: () {
+              startGame();
+            },
+            child: const Text('Start Game'),
+          ),
+          if (_locigalState == 'GameStarted') quizBlock,
+        ],
+      ),
+    );
+  }
+}
+
+class MenuForm extends StatefulWidget {
+  final Function(int, int, String) onGameCreated;
+  final Function(int, int, String) onGameJoined;
+
+  const MenuForm({
+    Key? key,
+    required this.onGameCreated,
+    required this.onGameJoined,
+  }) : super(key: key);
+
+  @override
+  _MenuFormState createState() => _MenuFormState();
+}
+
+class _MenuFormState extends State<MenuForm> {
+  final _playerNameController = TextEditingController();
+  final _gameIdController = TextEditingController();
+
+  Future<void> createGame(_newPlayerName) async {
+    final response = await http.post(Uri.parse('http://localhost:5000/game/0/$_newPlayerName'));
+    
+    if (response.statusCode == 200) {
+      final responseJson = jsonDecode(response.body);
+      final _newGameId = responseJson['game_id'];
+      final _newPlayerId = responseJson['player_id'];
+      widget.onGameCreated(_newGameId, _newPlayerId, _newPlayerName);
+    } else {
+      throw Exception('Failed to create game');
+    }
+  }
+  
+  Future<void> joinGame(_newGameId, _newPlayerName) async {
+    final response = await http.post(Uri.parse('http://localhost:5000/game/$_newGameId/$_newPlayerName'));
+    
+    if (response.statusCode == 200) {
+      final responseJson = jsonDecode(response.body);
+      final _newGameId = responseJson['game_id'];
+      final _newPlayerId = responseJson['player_id'];
+      widget.onGameJoined(_newGameId, _newPlayerId, _newPlayerName);
+    } else {
+      throw Exception('Failed to join game');
+    }
+  }
+
+  @override
+  void dispose() {
+    _playerNameController.dispose();
+    _gameIdController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      children: [
+        TextField(
+          controller: _playerNameController,
+          decoration: const InputDecoration(
             border: OutlineInputBorder(),
             labelText: 'Player Name',
           ),
         ),
-        const SizedBox(height: 20),
         ElevatedButton(
           onPressed: () {
-            createGame();
-          },
+            createGame(_playerNameController.text);
+          }, 
           child: const Text('Create Game'),
         ),
-      ],
-    );
-
-
-    Widget test = GestureDetector(
-      onTap: () {
-        answerQuestion();
-      },
-      child: Container(
-        width: 200,
-        height: 200,
-        color: Colors.red,
-        child: Center(
-          child: Text(
-            '$_counter',
-            style: Theme.of(context).textTheme.headline4,
+        TextField(
+          controller: _gameIdController,
+          decoration: const InputDecoration(
+            border: OutlineInputBorder(),
+            labelText: 'Game ID',
           ),
         ),
-      ),
-    );
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("Jump&Calc"),
-      ),
-      body: test,
+        ElevatedButton(
+          onPressed: () {
+            joinGame(_gameIdController.text, _playerNameController.text);
+          },
+          child: const Text('Join Game'),
+        ),
+      ]
     );
   }
 }
