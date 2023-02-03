@@ -35,44 +35,83 @@ class _MyHomePageState extends State<MyHomePage> {
   String _locigalState = 'NoGame';
   int _gameId = 0;
   int _playerId = 0;
+  bool _started = false;
   String _playerName = '';
+  String _playersString = '';
 
   Future<void> startGame() async {
-    final response = await http.post(Uri.parse('http://localhost:5000/game/0/'));
-    
-    if (response.statusCode == 200) {
-      setState(() {
-        _locigalState = 'GameStarted';
-      });
-    } else {
-      throw Exception('Failed to load question');
-    }
+      final response = await http.patch(Uri.parse('https://robertfoerster.pythonanywhere.com/game/$_gameId/$_playerName'));
+      
+      if (response.statusCode == 200) {
+        setState(() {
+          _locigalState = 'GameStarted';
+        });
+      } 
   }
 
   Future<void> answerQuestion() async {
-    final response = await http.put(Uri.parse('http://192.168.1.14:5000/player/1166/4028/1'));
-    final responseJson = jsonDecode(response.body);
+    try {
+      final response = await http.put(Uri.parse('https://robertfoerster.pythonanywhere.com/player/$_gameId/$_playerId/1'));
+      final responseJson = jsonDecode(response.body);
 
-    if (response.statusCode == 200) {
-      setState(() {
-        _counter = responseJson['score'];
-      });
-    } else {
-      throw Exception('Failed to load question');
+      if (response.statusCode == 200) {
+        setState(() {
+          _counter = responseJson['score'];
+        });
+      } else {
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: const Text('Error'),
+              content: Text(responseJson['error']),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text('OK'),
+                ),
+              ],
+            );
+          },
+        );
+      }
+    } catch (e) {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('Error'),
+            content: Text(e.toString()),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: const Text('OK'),
+              ),
+            ],
+          );
+        },
+      );
     }
   }
 
   Future<void> getState() async {
-    final response = await http.get(Uri.parse('http://192.168.1.14:5000/game/1166/robs'));
-    final responseJson = jsonDecode(response.body);
+    if (_locigalState == 'NoGame') return;
+    try {
+      final response = await http.get(Uri.parse('https://robertfoerster.pythonanywhere.com//game/$_gameId/$_playerId'));
+      final responseJson = jsonDecode(response.body);
 
-    if (response.statusCode == 200) {
-      print(responseJson);
-      // setState(() {
-      //   _counter = responseJson['counter'];
-      // });
-    } else {
-      throw Exception('Failed to load question');
+      if (response.statusCode == 200) {
+        setState(() {
+          _started = responseJson['started'];
+          _playersString = responseJson['players'];
+        });
+      }
+    } catch (e) {
+      print(e.toString());
     }
   }
 
@@ -90,28 +129,31 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    Widget quizBlock = ListView(
+    Widget gameInfoBlock = Column(
       children: [
-        Text('$_gameId'),
-        Text('$_playerId'),
-        Text(_playerName),
-        GestureDetector(
-          onTap: () {
-            answerQuestion();
-          },
-          child: Container(
-            width: 200,
-            height: 200,
-            color: Colors.red,
-            child: Center(
-              child: Text(
-                '$_counter',
-                style: Theme.of(context).textTheme.headline4,
-              ),
-            ),
-          ),
-        )
+        Text('GameId: $_gameId'),
+        Text('Started: $_started'),
+        Text('PlayerId: $_playerId'),
+        Text('PlayerName: $_playerName'),
+        Text('Players: $_playersString'),
       ],
+    );
+
+    Widget quizBlock = GestureDetector(
+      onTap: () {
+        answerQuestion();
+      },
+      child: Container(
+        width: 200,
+        height: 200,
+        color: Colors.red,
+        child: Center(
+          child: Text(
+            '$_counter',
+            style: Theme.of(context).textTheme.headline4,
+          ),
+        ),
+      ),
     );
 
     return Scaffold(
@@ -142,6 +184,7 @@ class _MyHomePageState extends State<MyHomePage> {
             child: const Text('Start Game'),
           ),
           if (_locigalState == 'GameStarted') quizBlock,
+          if (_locigalState == 'GameStarted' || _locigalState == 'GameCreated' || _locigalState == 'GameJoined') gameInfoBlock,
         ],
       ),
     );
@@ -167,28 +210,100 @@ class _MenuFormState extends State<MenuForm> {
   final _gameIdController = TextEditingController();
 
   Future<void> createGame(_newPlayerName) async {
-    final response = await http.post(Uri.parse('http://localhost:5000/game/0/$_newPlayerName'));
-    
-    if (response.statusCode == 200) {
+    try {
+      final response = await http.post(Uri.parse('https://robertfoerster.pythonanywhere.com/game/0/$_newPlayerName'));
       final responseJson = jsonDecode(response.body);
-      final _newGameId = responseJson['game_id'];
-      final _newPlayerId = responseJson['player_id'];
-      widget.onGameCreated(_newGameId, _newPlayerId, _newPlayerName);
-    } else {
-      throw Exception('Failed to create game');
+      
+      if (response.statusCode == 200) {
+        final _newGameId = responseJson['game_id'];
+        final _newPlayerId = responseJson['player_id'];
+        widget.onGameCreated(_newGameId, _newPlayerId, _newPlayerName);
+      } else {
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: const Text('Error'),
+              content: Text(responseJson['error']),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text('OK'),
+                ),
+              ],
+            );
+          },
+        );
+      }
+    } catch (e) {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('Error'),
+            content: const Text('Failed to create game'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: const Text('OK'),
+              ),
+            ],
+          );
+        },
+      );
     }
   }
   
   Future<void> joinGame(_newGameId, _newPlayerName) async {
-    final response = await http.post(Uri.parse('http://localhost:5000/game/$_newGameId/$_newPlayerName'));
-    
-    if (response.statusCode == 200) {
+    try {
+      final response = await http.put(Uri.parse('https://robertfoerster.pythonanywhere.com/game/$_newGameId/$_newPlayerName'));
       final responseJson = jsonDecode(response.body);
-      final _newGameId = responseJson['game_id'];
-      final _newPlayerId = responseJson['player_id'];
-      widget.onGameJoined(_newGameId, _newPlayerId, _newPlayerName);
-    } else {
-      throw Exception('Failed to join game');
+      
+      if (response.statusCode == 200) {
+        final _newGameId = responseJson['game_id'];
+        final _newPlayerId = responseJson['player_id'];
+        widget.onGameJoined(_newGameId, _newPlayerId, _newPlayerName);
+      } else {
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: const Text('Error'),
+              content: Text(responseJson['error']),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text('OK'),
+                ),
+              ],
+            );
+          },
+        );
+      }
+    } catch (e) {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('Error'),
+            content: const Text('Failed to join game'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: const Text('OK'),
+              ),
+            ],
+          );
+        },
+      );
     }
   }
 
@@ -201,35 +316,38 @@ class _MenuFormState extends State<MenuForm> {
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      children: [
-        TextField(
-          controller: _playerNameController,
-          decoration: const InputDecoration(
-            border: OutlineInputBorder(),
-            labelText: 'Player Name',
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        children: [
+          TextField(
+            controller: _playerNameController,
+            decoration: const InputDecoration(
+              border: OutlineInputBorder(),
+              labelText: 'Player Name',
+            ),
           ),
-        ),
-        ElevatedButton(
-          onPressed: () {
-            createGame(_playerNameController.text);
-          }, 
-          child: const Text('Create Game'),
-        ),
-        TextField(
-          controller: _gameIdController,
-          decoration: const InputDecoration(
-            border: OutlineInputBorder(),
-            labelText: 'Game ID',
+          ElevatedButton(
+            onPressed: () {
+              createGame(_playerNameController.text);
+            }, 
+            child: const Text('Create Game'),
           ),
-        ),
-        ElevatedButton(
-          onPressed: () {
-            joinGame(_gameIdController.text, _playerNameController.text);
-          },
-          child: const Text('Join Game'),
-        ),
-      ]
+          TextField(
+            controller: _gameIdController,
+            decoration: const InputDecoration(
+              border: OutlineInputBorder(),
+              labelText: 'Game ID',
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              joinGame(_gameIdController.text, _playerNameController.text);
+            },
+            child: const Text('Join Game'),
+          ),
+        ]
+      )
     );
   }
 }
