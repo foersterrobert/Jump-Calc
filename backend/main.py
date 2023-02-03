@@ -40,7 +40,7 @@ class Player(db.Model):
     game = db.relationship("Game", backref=db.backref("game", uselist=False))
 
     def __repr__(self):
-        return f"Player(id={self.id}, name={self.name}, score={self.score})"
+        return f"Player(id={self.id}, name={self.name}, score={self.score}), alive={self.alive})"
 
 class GameResource(Resource):
     ### Create Game
@@ -74,6 +74,11 @@ class GameResource(Resource):
                 "error": "game not found"
             }, 404
 
+        if game.started:
+            return {
+                "error": "game already started"
+            }, 400
+
         while True:
             player_id = random.randint(1000, 9999)
             if Player.query.filter_by(id=player_id).first() is None:
@@ -89,7 +94,7 @@ class GameResource(Resource):
         }
     
     ### Start Game
-    def path(self, game_id, player_name):
+    def patch(self, game_id, player_name):
         game = Game.query.filter_by(id=game_id).first()
         if game is None:
             return {
@@ -108,11 +113,14 @@ class GameResource(Resource):
             return {
                 "error": "game not found"
             }, 404
+
+        players = Player.query.filter_by(game_id=game_id).all()
+        players = " | ".join([f"{player.name}, {player.score}, {player.alive}" for player in players])
+        
         return {
             "game_id": game.id,
-            # "players": game.players,
-            # "questions": game.questions,
-            # "state": game.state
+            "started": game.started,
+            "players": players
         }
 
 
@@ -137,20 +145,20 @@ class PlayerResource(Resource):
             }, 404
 
         game = Game.query.filter_by(id=player.game_id).first()
-        # if game is None:
-        #     return {
-        #         "error": "game not found"
-        #     }, 404
+        if game is None:
+            return {
+                "error": "game not found"
+            }, 404
 
-        # if game.started != True:
-        #     return {
-        #         "error": "game not started"
-        #     }, 400
+        if game.started != True:
+            return {
+                "error": "game not started"
+            }, 400
 
-        # if player.alive is False:
-        #     return {
-        #         "error": "player is dead"
-        #     }, 400
+        if player.alive is False:
+            return {
+                "error": "player is dead"
+            }, 400
 
         # if game.questions[player.score]["correct"] == answer:
         #     player.score += 1
