@@ -30,12 +30,13 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+  int _score = 0;
   Timer? _timer;
   String _locigalState = 'NoGame';
   int _gameId = 0;
   int _playerId = 0;
   bool _started = false;
+  bool _alive = false;
   String _playerName = '';
   String _playersString = '';
 
@@ -49,14 +50,14 @@ class _MyHomePageState extends State<MyHomePage> {
       } 
   }
 
-  Future<void> answerQuestion() async {
+  Future<void> answerQuestion(_answer) async {
     try {
-      final response = await http.put(Uri.parse('https://robertfoerster.pythonanywhere.com/player/$_gameId/$_playerId/1'));
+      final response = await http.put(Uri.parse('https://robertfoerster.pythonanywhere.com/player/$_gameId/$_playerId/$_answer'));
       final responseJson = jsonDecode(response.body);
 
       if (response.statusCode == 200) {
         setState(() {
-          _counter = responseJson['score'];
+          _score = responseJson['score'];
         });
       } else {
         showDialog(
@@ -111,7 +112,7 @@ class _MyHomePageState extends State<MyHomePage> {
         });
       }
     } catch (e) {
-      print(e.toString());
+
     }
   }
 
@@ -131,6 +132,8 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     Widget gameInfoBlock = Column(
       children: [
+        Text('Score: $_score'),
+        Text('alive: $_alive'),
         Text('GameId: $_gameId'),
         Text('Started: $_started'),
         Text('PlayerId: $_playerId'),
@@ -139,21 +142,33 @@ class _MyHomePageState extends State<MyHomePage> {
       ],
     );
 
-    Widget quizBlock = GestureDetector(
-      onTap: () {
-        answerQuestion();
-      },
-      child: Container(
-        width: 200,
-        height: 200,
-        color: Colors.red,
-        child: Center(
-          child: Text(
-            '$_counter',
-            style: Theme.of(context).textTheme.headline4,
-          ),
+    Widget quizBlock = Column(
+      children: [
+        ElevatedButton(
+          onPressed: () {
+            answerQuestion(1);
+          },
+          child: const Text('1'),
         ),
-      ),
+        ElevatedButton(
+          onPressed: () {
+            answerQuestion(2);
+          },
+          child: const Text('2'),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            answerQuestion(3);
+          },
+          child: const Text('3'),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            answerQuestion(4);
+          },
+          child: const Text('4'),
+        ),
+      ]
     );
 
     return Scaffold(
@@ -208,10 +223,42 @@ class MenuForm extends StatefulWidget {
 class _MenuFormState extends State<MenuForm> {
   final _playerNameController = TextEditingController();
   final _gameIdController = TextEditingController();
+  bool _public = false;
+  Timer? _timer;
+  String _publicGames = 'No public games found.'; 
 
-  Future<void> createGame(_newPlayerName) async {
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(const Duration(seconds: 1), (Timer t) => getPublicGames());
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _playerNameController.dispose();
+    _gameIdController.dispose();
+    super.dispose();
+  }
+
+  Future<void> getPublicGames() async {
     try {
-      final response = await http.post(Uri.parse('https://robertfoerster.pythonanywhere.com/game/0/$_newPlayerName'));
+      final response = await http.get(Uri.parse('https://robertfoerster.pythonanywhere.com/game'));
+      final responseJson = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        setState(() {
+          _publicGames = responseJson['games'];
+        });
+      }
+    } catch (e) {
+
+    }
+  }
+
+  Future<void> createGame(_newPlayerName, _public) async {
+    try {
+      final response = await http.post(Uri.parse('https://robertfoerster.pythonanywhere.com/game/$_newPlayerName/$_public'));
       final responseJson = jsonDecode(response.body);
       
       if (response.statusCode == 200) {
@@ -308,13 +355,6 @@ class _MenuFormState extends State<MenuForm> {
   }
 
   @override
-  void dispose() {
-    _playerNameController.dispose();
-    _gameIdController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(16.0),
@@ -327,11 +367,23 @@ class _MenuFormState extends State<MenuForm> {
               labelText: 'Player Name',
             ),
           ),
-          ElevatedButton(
-            onPressed: () {
-              createGame(_playerNameController.text);
-            }, 
-            child: const Text('Create Game'),
+          Row(
+            children: [
+              Switch(
+                value: _public,
+                onChanged: (value) {
+                  setState(() {
+                    _public = value;
+                  });
+                },
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  createGame(_playerNameController.text, _public);
+                }, 
+                child: const Text('Create Game'),
+              )
+            ],
           ),
           TextField(
             controller: _gameIdController,
@@ -346,6 +398,7 @@ class _MenuFormState extends State<MenuForm> {
             },
             child: const Text('Join Game'),
           ),
+          Text(_publicGames),
         ]
       )
     );

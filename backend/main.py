@@ -1,9 +1,7 @@
-import os
 import random
 from flask import Flask
-from flask_restful import Api, Resource, reqparse, abort
+from flask_restful import Api, Resource
 from flask_sqlalchemy import SQLAlchemy
-import requests
 
 app = Flask(__name__)
 api = Api(app)
@@ -25,6 +23,7 @@ db = SQLAlchemy(app)
 class Game(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     started = db.Column(db.Boolean, default=False)
+    public = db.Column(db.Boolean, default=False)
     # questions = db.Column(db.JSON, default=[])
     
     def __repr__(self):
@@ -44,12 +43,12 @@ class Player(db.Model):
 
 class GameResource(Resource):
     ### Create Game
-    def post(self, game_id, player_name):
+    def post(self, player_name, public):
         while True:
             game_id = random.randint(1000, 9999)
             if Game.query.filter_by(id=game_id).first() is None:
                 break
-        game = Game(id=game_id) #questions=generate_questions())
+        game = Game(id=game_id, public=public) #questions=generate_questions())
 
         while True:
             player_id = random.randint(1000, 9999)
@@ -93,21 +92,8 @@ class GameResource(Resource):
             "player_id": player.id
         }
     
-    ### Start Game
-    def patch(self, game_id, player_name):
-        game = Game.query.filter_by(id=game_id).first()
-        if game is None:
-            return {
-                "error": "game not found"
-            }, 404
-        game.started = True
-        db.session.commit()
-        return {
-            "game_id": game.id
-        }
-    
     ### Get Game
-    def get(self, game_id, player_name):
+    def get(self, game_id):
         game = Game.query.filter_by(id=game_id).first()
         if game is None:
             return {
@@ -122,11 +108,20 @@ class GameResource(Resource):
             "started": game.started,
             "players": players
         }
-
+    
+    ### Get all public games
+    def patch(self):
+        games = Game.query.filter_by(public=True).all()
+        games_str = " | ".join([f"{game.id}" for game in games])
+        if games_str == "":
+            games_str = "No public games"
+        return {
+            "games": games_str
+        }
 
 class PlayerResource(Resource):
     ### Get Questions
-    def get(self, game_id, player_id, answer):
+    def get(self, game_id):
         game = Game.query.filter_by(id=game_id).first()
         if game is None:
             return {
@@ -137,7 +132,7 @@ class PlayerResource(Resource):
         }
 
     ### Answer Question
-    def put(self, game_id, player_id, answer):
+    def put(self, player_id, answer):
         player = Player.query.filter_by(id=player_id).first()
         if player is None:
             return {
@@ -173,9 +168,26 @@ class PlayerResource(Resource):
             "score": player.score,
             "alive": player.alive
         }
+    
+    ### Start Game
+    def patch(self, game_id):
+        game = Game.query.filter_by(id=game_id).first()
+        if game is None:
+            return {
+                "error": "game not found"
+            }, 404
+        if game.started:
+            return {
+                "error": "game already started"
+            }, 400
+        game.started = True
+        db.session.commit()
+        return {
+            "game_id": game.id
+        }
 
-api.add_resource(GameResource, "/game/<int:game_id>/<string:player_name>")
-api.add_resource(PlayerResource, "/player/<int:game_id>/<int:player_id>/<int:answer>")
+api.add_resource(GameResource, "/game/<string:player_name>/<public>", "/game/<int:game_id>/<string:player_name>", "/game/<int:game_id>", "/game")
+api.add_resource(PlayerResource, "/player/<int:game_id>", "/player/<int:player_id>/<int:answer>")
 
 if __name__ == '__main__':
     with app.app_context():
