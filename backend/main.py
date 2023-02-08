@@ -48,6 +48,7 @@ class GameResource(Resource):
             game_id = random.randint(1000, 9999)
             if Game.query.filter_by(id=game_id).first() is None:
                 break
+        public = True if public == "true" else False
         game = Game(id=game_id, public=public) #questions=generate_questions())
 
         while True:
@@ -188,8 +189,8 @@ class PlayerResource(Resource):
 
 api.add_resource(GameResource, "/game/<string:player_name>/<public>", "/game/<int:game_id>/<string:player_name>", "/game/<int:game_id>", "/game")
 api.add_resource(PlayerResource, "/player/<int:game_id>", "/player/<int:player_id>/<int:answer>")
+with app.app_context():
+    db.create_all()
 
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
     app.run(host='0.0.0.0', port=5000, debug=True)
