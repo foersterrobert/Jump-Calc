@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:async';
 
+const serverUrl = 'http://192.168.1.14:5000'; //'https://robertfoerster.pythonanywhere.com';
+
 void main() {
   runApp(const MyApp());
 }
@@ -41,7 +43,7 @@ class _MyHomePageState extends State<MyHomePage> {
   String _playersString = '';
 
   Future<void> startGame() async {
-      final response = await http.patch(Uri.parse('https://robertfoerster.pythonanywhere.com/game/$_gameId/$_playerName'));
+      final response = await http.patch(Uri.parse('$serverUrl/game/$_gameId/$_playerName'));
       
       if (response.statusCode == 200) {
         setState(() {
@@ -52,7 +54,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> answerQuestion(_answer) async {
     try {
-      final response = await http.put(Uri.parse('https://robertfoerster.pythonanywhere.com/player/$_gameId/$_playerId/$_answer'));
+      final response = await http.put(Uri.parse('$serverUrl/player/$_gameId/$_playerId/$_answer'));
       final responseJson = jsonDecode(response.body);
 
       if (response.statusCode == 200) {
@@ -102,7 +104,7 @@ class _MyHomePageState extends State<MyHomePage> {
   Future<void> getState() async {
     if (_locigalState == 'NoGame') return;
     try {
-      final response = await http.get(Uri.parse('https://robertfoerster.pythonanywhere.com//game/$_gameId/$_playerId'));
+      final response = await http.get(Uri.parse('$serverUrl/game/$_gameId'));
       final responseJson = jsonDecode(response.body);
 
       if (response.statusCode == 200) {
@@ -243,7 +245,7 @@ class _MenuFormState extends State<MenuForm> {
 
   Future<void> getPublicGames() async {
     try {
-      final response = await http.get(Uri.parse('https://robertfoerster.pythonanywhere.com/game'));
+      final response = await http.patch(Uri.parse('$serverUrl/game'));
       final responseJson = jsonDecode(response.body);
 
       if (response.statusCode == 200) {
@@ -258,7 +260,7 @@ class _MenuFormState extends State<MenuForm> {
 
   Future<void> createGame(_newPlayerName, _public) async {
     try {
-      final response = await http.post(Uri.parse('https://robertfoerster.pythonanywhere.com/game/$_newPlayerName/$_public'));
+      final response = await http.post(Uri.parse('$serverUrl/game/$_newPlayerName/$_public'));
       final responseJson = jsonDecode(response.body);
       
       if (response.statusCode == 200) {
@@ -307,7 +309,7 @@ class _MenuFormState extends State<MenuForm> {
   
   Future<void> joinGame(_newGameId, _newPlayerName) async {
     try {
-      final response = await http.put(Uri.parse('https://robertfoerster.pythonanywhere.com/game/$_newGameId/$_newPlayerName'));
+      final response = await http.put(Uri.parse('$serverUrl/game/$_newGameId/$_newPlayerName'));
       final responseJson = jsonDecode(response.body);
       
       if (response.statusCode == 200) {
