@@ -41,9 +41,13 @@ class _MyHomePageState extends State<MyHomePage> {
   bool _alive = false;
   String _playerName = '';
   String _playersString = '';
+  List<dynamic> _questions = [
+        ["What is the capital of India?", "New Delhi", "Madrid", "Berlin", "Paris", 0],
+        ["What is the capital of Indonesia?", "Jakarta", "Madrid", "Berlin", "Paris", 0],
+    ];
 
   Future<void> startGame() async {
-      final response = await http.patch(Uri.parse('$serverUrl/game/$_gameId/$_playerName'));
+      final response = await http.patch(Uri.parse('$serverUrl/player/$_gameId'));
       
       if (response.statusCode == 200) {
         setState(() {
@@ -54,7 +58,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> answerQuestion(_answer) async {
     try {
-      final response = await http.put(Uri.parse('$serverUrl/player/$_gameId/$_playerId/$_answer'));
+      final response = await http.put(Uri.parse('$serverUrl/player/$_playerId/$_answer'));
       final responseJson = jsonDecode(response.body);
 
       if (response.statusCode == 200) {
@@ -146,51 +150,60 @@ class _MyHomePageState extends State<MyHomePage> {
 
     Widget quizBlock = Column(
       children: [
-        ElevatedButton(
-          onPressed: () {
-            answerQuestion(1);
-          },
-          child: const Text('1'),
-        ),
-        ElevatedButton(
-          onPressed: () {
-            answerQuestion(2);
-          },
-          child: const Text('2'),
-        ),
-        ElevatedButton(
-          onPressed: () {
-            answerQuestion(3);
-          },
-          child: const Text('3'),
-        ),
-        ElevatedButton(
-          onPressed: () {
-            answerQuestion(4);
-          },
-          child: const Text('4'),
-        ),
-      ]
+        Text(_questions[_score][0]),
+        Row(
+          children: [
+            ElevatedButton(
+              onPressed: () {
+                answerQuestion(0);
+              },
+              child: Text(_questions[_score][1]),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                answerQuestion(1);
+              },
+              child: Text(_questions[_score][2])
+            ),
+            ElevatedButton(
+              onPressed: () {
+                answerQuestion(2);
+              },
+              child: Text(_questions[_score][3]),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                answerQuestion(3);
+              },
+              child: Text(_questions[_score][4]),
+            ),
+          ]
+        )
+      ],
     );
+    
 
     return Scaffold(
       body: ListView(
         children: [
           if (_locigalState == 'NoGame') MenuForm(
-            onGameCreated: (gameId, playerId, playerName) {
+            onGameCreated: (gameId, playerId, playerName, questions) {
+              print(questions);
               setState(() {
                 _locigalState = 'GameCreated';
                 _gameId = gameId;
                 _playerId = playerId;
                 _playerName = playerName;
+                _questions = questions;
               });
             },
-            onGameJoined: (gameId, playerId, playerName) {
+            onGameJoined: (gameId, playerId, playerName, questions) {
               setState(() {
                 _locigalState = 'GameJoined';
                 _gameId = gameId;
                 _playerId = playerId;
                 _playerName = playerName;
+              _questions = questions;
               });
             },
           ),
@@ -209,8 +222,8 @@ class _MyHomePageState extends State<MyHomePage> {
 }
 
 class MenuForm extends StatefulWidget {
-  final Function(int, int, String) onGameCreated;
-  final Function(int, int, String) onGameJoined;
+  final Function(int, int, String, dynamic) onGameCreated;
+  final Function(int, int, String, dynamic) onGameJoined;
 
   const MenuForm({
     Key? key,
@@ -244,18 +257,18 @@ class _MenuFormState extends State<MenuForm> {
   }
 
   Future<void> getPublicGames() async {
-    try {
-      final response = await http.patch(Uri.parse('$serverUrl/game'));
-      final responseJson = jsonDecode(response.body);
+    // try {
+    //   final response = await http.patch(Uri.parse('$serverUrl/game'));
+    //   final responseJson = jsonDecode(response.body);
 
-      if (response.statusCode == 200) {
-        setState(() {
-          _publicGames = responseJson['games'];
-        });
-      }
-    } catch (e) {
+    //   if (response.statusCode == 200) {
+    //     setState(() {
+    //       _publicGames = responseJson['games'];
+    //     });
+    //   }
+    // } catch (e) {
 
-    }
+    // }
   }
 
   Future<void> createGame(_newPlayerName, _public) async {
@@ -266,7 +279,8 @@ class _MenuFormState extends State<MenuForm> {
       if (response.statusCode == 200) {
         final _newGameId = responseJson['game_id'];
         final _newPlayerId = responseJson['player_id'];
-        widget.onGameCreated(_newGameId, _newPlayerId, _newPlayerName);
+        final _questions = responseJson['questions'];
+        widget.onGameCreated(_newGameId, _newPlayerId, _newPlayerName, _questions);
       } else {
         showDialog(
           context: context,
@@ -287,6 +301,7 @@ class _MenuFormState extends State<MenuForm> {
         );
       }
     } catch (e) {
+      print(e);
       showDialog(
         context: context,
         builder: (BuildContext context) {
@@ -315,7 +330,8 @@ class _MenuFormState extends State<MenuForm> {
       if (response.statusCode == 200) {
         final _newGameId = responseJson['game_id'];
         final _newPlayerId = responseJson['player_id'];
-        widget.onGameJoined(_newGameId, _newPlayerId, _newPlayerName);
+        final _questions = responseJson['questions'];
+        widget.onGameJoined(_newGameId, _newPlayerId, _newPlayerName, _questions);
       } else {
         showDialog(
           context: context,

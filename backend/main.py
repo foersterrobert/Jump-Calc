@@ -8,23 +8,25 @@ api = Api(app)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
 db = SQLAlchemy(app)
 
-# def generate_questions():
-#     questions = []
-#     for i in range(10):
-#         question = {
-#             "question": "Question {}".format(i),
-#             "answers": ["Answer {}".format(i) for i in range(4)],
-#             "correct": random.randint(0, 3)
-                                                            
-#         }
-#         questions.append(question)
-#     return questions
+def generate_questions():
+    questions = [
+        ["What is the capital of France?", "Paris", "London", "Berlin", "Madrid", 0],
+        ["What is the capital of Germany?", "Berlin", "London", "Paris", "Madrid", 0],
+        ["What is the capital of Spain?", "Madrid", "London", "Berlin", "Paris", 0],
+        ["What is the capital of England?", "London", "Madrid", "Berlin", "Paris", 0],
+        ["What is the capital of Italy?", "Rome", "Madrid", "Berlin", "Paris", 0],
+        ["What is the capital of Portugal?", "Lisbon", "Madrid", "Berlin", "Paris", 0],
+        ["What is the capital of Poland?", "Warsaw", "Madrid", "Berlin", "Paris", 0],
+        ["What is the capital of Sweden?", "Stockholm", "Madrid", "Berlin", "Paris", 0],
+        ["What is the capital of Norway?", "Oslo", "Madrid", "Berlin", "Paris", 0],
+    ]
+    return questions
 
 class Game(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     started = db.Column(db.Boolean, default=False)
     public = db.Column(db.Boolean, default=False)
-    # questions = db.Column(db.JSON, default=[])
+    questions = db.Column(db.JSON, default=[])
     
     def __repr__(self):
         return f"Game(id={self.id})"
@@ -49,7 +51,7 @@ class GameResource(Resource):
             if Game.query.filter_by(id=game_id).first() is None:
                 break
         public = True if public == "true" else False
-        game = Game(id=game_id, public=public) #questions=generate_questions())
+        game = Game(id=game_id, public=public, questions=generate_questions())
 
         while True:
             player_id = random.randint(1000, 9999)
@@ -63,7 +65,8 @@ class GameResource(Resource):
 
         return {
             "game_id": game.id,
-            "player_id": player.id
+            "player_id": player.id,
+            "questions": game.questions
         }
     
     ### Join Game
@@ -90,7 +93,8 @@ class GameResource(Resource):
         db.session.commit()
         return {
             "game_id": game.id,
-            "player_id": player.id
+            "player_id": player.id,
+            "questions": game.questions
         }
     
     ### Get Game
@@ -121,17 +125,6 @@ class GameResource(Resource):
         }
 
 class PlayerResource(Resource):
-    ### Get Questions
-    def get(self, game_id):
-        game = Game.query.filter_by(id=game_id).first()
-        if game is None:
-            return {
-                "error": "game not found"
-            }, 404
-        return {
-            "questions": game.questions
-        }
-
     ### Answer Question
     def put(self, player_id, answer):
         player = Player.query.filter_by(id=player_id).first()
@@ -156,12 +149,13 @@ class PlayerResource(Resource):
                 "error": "player is dead"
             }, 400
 
-        # if game.questions[player.score]["correct"] == answer:
-        #     player.score += 1
-        # else:
-        #     player.alive = False
+        if game.questions[player.score][5] == answer:
+            player.score += 1
+        else:
+            player.alive = False
 
-        player.score += 1
+        if player.score == len(game.questions):
+            player.score = 0
 
         db.session.commit()
         return {
