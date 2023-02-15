@@ -27,6 +27,7 @@ class Game(db.Model):
     started = db.Column(db.Boolean, default=False)
     public = db.Column(db.Boolean, default=False)
     questions = db.Column(db.JSON, default=[])
+    creatorName = db.Column(db.String(80), nullable=True)
     
     def __repr__(self):
         return f"Game(id={self.id})"
@@ -51,7 +52,7 @@ class GameResource(Resource):
             if Game.query.filter_by(id=game_id).first() is None:
                 break
         public = True if public == "true" else False
-        game = Game(id=game_id, public=public, questions=generate_questions())
+        game = Game(id=game_id, public=public, questions=generate_questions(), creatorName=player_name)
 
         while True:
             player_id = random.randint(1000, 9999)
@@ -106,22 +107,20 @@ class GameResource(Resource):
             }, 404
 
         players = Player.query.filter_by(game_id=game_id).all()
-        players = " | ".join([f"{player.name}, {player.score}, {player.alive}" for player in players])
+        players_info = [[player.id, player.name, player.score, player.alive] for player in players]
         
         return {
             "game_id": game.id,
             "started": game.started,
-            "players": players
+            "players": players_info
         }
     
     ### Get all public games
     def patch(self):
         games = Game.query.filter_by(public=True).all()
-        games_str = " | ".join([f"{game.id}" for game in games])
-        if games_str == "":
-            games_str = "No public games"
+        games_info = [[game.id, game.creatorName] for game in games]
         return {
-            "games": games_str
+            "games": games_info
         }
 
 class PlayerResource(Resource):
@@ -159,7 +158,6 @@ class PlayerResource(Resource):
 
         db.session.commit()
         return {
-            "player_id": player.id,
             "score": player.score,
             "alive": player.alive
         }
@@ -187,4 +185,4 @@ with app.app_context():
     db.create_all()
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', debug=True)

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:async';
 
-const serverUrl = 'http://192.168.1.14:5000'; //'https://robertfoerster.pythonanywhere.com';
+const serverUrl = 'http://10.11.116.96:5000'; //'https://robertfoerster.pythonanywhere.com';
 
 void main() {
   runApp(const MyApp());
@@ -40,10 +40,9 @@ class _MyHomePageState extends State<MyHomePage> {
   bool _started = false;
   bool _alive = false;
   String _playerName = '';
-  String _playersString = '';
+  List<dynamic> _playersInfo = [];
   List<dynamic> _questions = [
         ["What is the capital of India?", "New Delhi", "Madrid", "Berlin", "Paris", 0],
-        ["What is the capital of Indonesia?", "Jakarta", "Madrid", "Berlin", "Paris", 0],
     ];
 
   Future<void> startGame() async {
@@ -64,6 +63,7 @@ class _MyHomePageState extends State<MyHomePage> {
       if (response.statusCode == 200) {
         setState(() {
           _score = responseJson['score'];
+          _alive = responseJson['alive'];
         });
       } else {
         showDialog(
@@ -114,7 +114,7 @@ class _MyHomePageState extends State<MyHomePage> {
       if (response.statusCode == 200) {
         setState(() {
           _started = responseJson['started'];
-          _playersString = responseJson['players'];
+          _playersInfo = responseJson['players'];
         });
       }
     } catch (e) {
@@ -138,13 +138,8 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     Widget gameInfoBlock = Column(
       children: [
-        Text('Score: $_score'),
-        Text('alive: $_alive'),
         Text('GameId: $_gameId'),
-        Text('Started: $_started'),
-        Text('PlayerId: $_playerId'),
-        Text('PlayerName: $_playerName'),
-        Text('Players: $_playersString'),
+        for (var player in _playersInfo) Text('Player: ${player[1]} Score: ${player[2]} Alive: ${player[3]}'),
       ],
     );
 
@@ -181,14 +176,12 @@ class _MyHomePageState extends State<MyHomePage> {
         )
       ],
     );
-    
 
     return Scaffold(
       body: ListView(
         children: [
           if (_locigalState == 'NoGame') MenuForm(
             onGameCreated: (gameId, playerId, playerName, questions) {
-              print(questions);
               setState(() {
                 _locigalState = 'GameCreated';
                 _gameId = gameId;
@@ -207,6 +200,7 @@ class _MyHomePageState extends State<MyHomePage> {
               });
             },
           ),
+          if (_locigalState == 'GameStarted' || _locigalState == 'GameCreated' || _locigalState == 'GameJoined') gameInfoBlock,
           if (_locigalState == 'GameCreated') ElevatedButton(
             onPressed: () {
               startGame();
@@ -214,7 +208,6 @@ class _MyHomePageState extends State<MyHomePage> {
             child: const Text('Start Game'),
           ),
           if (_locigalState == 'GameStarted') quizBlock,
-          if (_locigalState == 'GameStarted' || _locigalState == 'GameCreated' || _locigalState == 'GameJoined') gameInfoBlock,
         ],
       ),
     );
@@ -240,7 +233,7 @@ class _MenuFormState extends State<MenuForm> {
   final _gameIdController = TextEditingController();
   bool _public = false;
   Timer? _timer;
-  String _publicGames = 'No public games found.'; 
+  List<dynamic>_publicGames = []; 
 
   @override
   void initState() {
@@ -257,18 +250,18 @@ class _MenuFormState extends State<MenuForm> {
   }
 
   Future<void> getPublicGames() async {
-    // try {
-    //   final response = await http.patch(Uri.parse('$serverUrl/game'));
-    //   final responseJson = jsonDecode(response.body);
+    try {
+      final response = await http.patch(Uri.parse('$serverUrl/game'));
+      final responseJson = jsonDecode(response.body);
 
-    //   if (response.statusCode == 200) {
-    //     setState(() {
-    //       _publicGames = responseJson['games'];
-    //     });
-    //   }
-    // } catch (e) {
+      if (response.statusCode == 200) {
+        setState(() {
+          _publicGames = responseJson['games'];
+        });
+      }
+    } catch (e) {
 
-    // }
+    }
   }
 
   Future<void> createGame(_newPlayerName, _public) async {
@@ -301,7 +294,6 @@ class _MenuFormState extends State<MenuForm> {
         );
       }
     } catch (e) {
-      print(e);
       showDialog(
         context: context,
         builder: (BuildContext context) {
@@ -416,7 +408,18 @@ class _MenuFormState extends State<MenuForm> {
             },
             child: const Text('Join Game'),
           ),
-          Text(_publicGames),
+          if (_publicGames.isEmpty) const Text('No public games found'),
+          if (_publicGames.isNotEmpty) Row(
+            children: [
+              for (var game in _publicGames)
+                ElevatedButton(
+                  onPressed: () {
+                    joinGame(game[0], _playerNameController.text);
+                  },
+                  child: Text("${game[0].toString()} created by ${game[1]}")
+                )
+            ]
+          )
         ]
       )
     );
