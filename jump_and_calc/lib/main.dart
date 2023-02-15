@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:async';
 
-const serverUrl = 'http://10.11.116.96:5000'; //'https://robertfoerster.pythonanywhere.com';
+const serverUrl = 'http://192.168.1.14:5000'; //'https://robertfoerster.pythonanywhere.com';
 
 void main() {
   runApp(const MyApp());
@@ -34,10 +34,9 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   int _score = 0;
   Timer? _timer;
-  String _locigalState = 'NoGame';
+  String _logicalState = 'NoGame';
   int _gameId = 0;
   int _playerId = 0;
-  bool _started = false;
   bool _alive = false;
   String _playerName = '';
   List<dynamic> _playersInfo = [];
@@ -50,7 +49,7 @@ class _MyHomePageState extends State<MyHomePage> {
       
       if (response.statusCode == 200) {
         setState(() {
-          _locigalState = 'GameStarted';
+          _logicalState = 'GameStarted';
         });
       } 
   }
@@ -106,14 +105,16 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Future<void> getState() async {
-    if (_locigalState == 'NoGame') return;
+    if (_logicalState == 'NoGame') return;
     try {
       final response = await http.get(Uri.parse('$serverUrl/game/$_gameId'));
       final responseJson = jsonDecode(response.body);
 
       if (response.statusCode == 200) {
         setState(() {
-          _started = responseJson['started'];
+          if (responseJson['started'] == true) {
+            _logicalState = 'GameStarted';
+          }
           _playersInfo = responseJson['players'];
         });
       }
@@ -175,15 +176,17 @@ class _MyHomePageState extends State<MyHomePage> {
           ]
         )
       ],
-    );
+  );
 
-    return Scaffold(
-      body: ListView(
+  return Scaffold(
+    body: Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: ListView(
         children: [
-          if (_locigalState == 'NoGame') MenuForm(
+          if (_logicalState == 'NoGame') MenuForm(
             onGameCreated: (gameId, playerId, playerName, questions) {
               setState(() {
-                _locigalState = 'GameCreated';
+                _logicalState = 'GameCreated';
                 _gameId = gameId;
                 _playerId = playerId;
                 _playerName = playerName;
@@ -192,7 +195,7 @@ class _MyHomePageState extends State<MyHomePage> {
             },
             onGameJoined: (gameId, playerId, playerName, questions) {
               setState(() {
-                _locigalState = 'GameJoined';
+                _logicalState = 'GameJoined';
                 _gameId = gameId;
                 _playerId = playerId;
                 _playerName = playerName;
@@ -200,17 +203,19 @@ class _MyHomePageState extends State<MyHomePage> {
               });
             },
           ),
-          if (_locigalState == 'GameStarted' || _locigalState == 'GameCreated' || _locigalState == 'GameJoined') gameInfoBlock,
-          if (_locigalState == 'GameCreated') ElevatedButton(
+          if (_logicalState == 'GameStarted' || _logicalState == 'GameCreated' || _logicalState == 'GameJoined') gameInfoBlock,
+          if (_logicalState == 'GameCreated') ElevatedButton(
             onPressed: () {
               startGame();
             },
             child: const Text('Start Game'),
           ),
-          if (_locigalState == 'GameStarted') quizBlock,
+          if (_logicalState == 'GameStarted') quizBlock,
         ],
       ),
-    );
+
+    ) 
+  );
   }
 }
 
@@ -366,9 +371,7 @@ class _MenuFormState extends State<MenuForm> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
+    return Column(
         children: [
           TextField(
             controller: _playerNameController,
@@ -421,7 +424,6 @@ class _MenuFormState extends State<MenuForm> {
             ]
           )
         ]
-      )
     );
   }
 }

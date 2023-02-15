@@ -117,7 +117,7 @@ class GameResource(Resource):
     
     ### Get all public games
     def patch(self):
-        games = Game.query.filter_by(public=True).all()
+        games = Game.query.filter_by(public=True, started=False).all()
         games_info = [[game.id, game.creatorName] for game in games]
         return {
             "games": games_info
