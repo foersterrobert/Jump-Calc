@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:async';
+import 'package:fl_chart/fl_chart.dart';
 
 const serverUrl = 'http://192.168.1.14:5000'; //'https://robertfoerster.pythonanywhere.com';
 
@@ -144,6 +145,51 @@ class _MyHomePageState extends State<MyHomePage> {
       ],
     );
 
+    Widget gameVizBlock = AspectRatio(
+      aspectRatio: 2,
+      child: BarChart(
+        BarChartData(
+          barGroups: [
+            for (var i = 0; i < _playersInfo.length; i++) BarChartGroupData(
+              x: i,
+              barRods: [
+                BarChartRodData(
+                  toY: _playersInfo[i][2].toDouble(),
+                  width: 20,
+                ),
+              ],
+            ),
+          ],
+          titlesData: FlTitlesData(
+            show: true,
+            bottomTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 30,
+                getTitlesWidget: (double value, TitleMeta meta) {
+                  return SideTitleWidget(
+                    axisSide: meta.axisSide,
+                    space: 4,
+                    child: Text(
+                      _playersInfo[value.toInt()][1],
+                      style: const TextStyle(
+                        color: Colors.black,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 10,
+                      ),
+                    ),
+                  );
+                }
+              )
+
+            )
+          ),
+          alignment: BarChartAlignment.spaceAround,
+          maxY: 10,
+        )
+      )
+    );
+
     Widget quizBlock = Column(
       children: [
         Text(_questions[_score][0]),
@@ -211,6 +257,7 @@ class _MyHomePageState extends State<MyHomePage> {
             child: const Text('Start Game'),
           ),
           if (_logicalState == 'GameStarted') quizBlock,
+          if (_logicalState == 'GameStarted') gameVizBlock,
         ],
       ),
 
