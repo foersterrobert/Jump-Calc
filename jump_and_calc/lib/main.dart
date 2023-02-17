@@ -61,6 +61,25 @@ class _MyHomePageState extends State<MyHomePage> {
       final responseJson = jsonDecode(response.body);
 
       if (response.statusCode == 200) {
+        if (responseJson['alive'] == false) {
+          showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: const Text('Game Over'),
+                content: Text('Your score is ${responseJson['score']}'),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                    child: const Text('OK'),
+                  ),
+                ],
+              );
+            },
+          );
+        }
         setState(() {
           _score = responseJson['score'];
           _alive = responseJson['alive'];
@@ -156,6 +175,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 BarChartRodData(
                   toY: _playersInfo[i][2].toDouble(),
                   width: 20,
+                  color: _playersInfo[i][3] ? Colors.blue : Colors.red,
                 ),
               ],
             ),
@@ -181,16 +201,19 @@ class _MyHomePageState extends State<MyHomePage> {
                   );
                 }
               )
-
             )
           ),
+          gridData: FlGridData(show: false),
+          borderData: FlBorderData(show: false),
           alignment: BarChartAlignment.spaceAround,
           maxY: 10,
+          backgroundColor: Color.fromARGB(255, 165, 201, 206)
         )
       )
     );
 
     Widget quizBlock = Column(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
         Text(_questions[_score][0]),
         Row(
@@ -317,6 +340,26 @@ class _MenuFormState extends State<MenuForm> {
   }
 
   Future<void> createGame(_newPlayerName, _public) async {
+    if (_newPlayerName.isEmpty) {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('Error'),
+            content: const Text('Player name cannot be empty'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: const Text('OK'),
+              ),
+            ],
+          );
+        },
+      );
+      return;
+    }
     try {
       final response = await http.post(Uri.parse('$serverUrl/game/$_newPlayerName/$_public'));
       final responseJson = jsonDecode(response.body);
@@ -367,6 +410,26 @@ class _MenuFormState extends State<MenuForm> {
   }
   
   Future<void> joinGame(_newGameId, _newPlayerName) async {
+    if (_newPlayerName.isEmpty || _newGameId.isEmpty) {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('Error'),
+            content: const Text('Player name and game ID cannot be empty'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: const Text('OK'),
+              ),
+            ],
+          );
+        },
+      );
+      return;
+    }
     try {
       final response = await http.put(Uri.parse('$serverUrl/game/$_newGameId/$_newPlayerName'));
       final responseJson = jsonDecode(response.body);
