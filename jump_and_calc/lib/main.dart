@@ -38,7 +38,7 @@ class _MyHomePageState extends State<MyHomePage> {
   String _logicalState = 'NoGame';
   int _gameId = 0;
   int _playerId = 0;
-  bool _alive = false;
+  String _playerState = "alive";
   String _playerName = '';
   List<dynamic> _playersInfo = [];
   List<dynamic> _questions = [
@@ -61,7 +61,7 @@ class _MyHomePageState extends State<MyHomePage> {
       final responseJson = jsonDecode(response.body);
 
       if (response.statusCode == 200) {
-        if (responseJson['alive'] == false) {
+        if (responseJson['state'] == 'dead') {
           showDialog(
             context: context,
             builder: (BuildContext context) {
@@ -80,9 +80,28 @@ class _MyHomePageState extends State<MyHomePage> {
             },
           );
         }
+        if (responseJson['state'] == 'won') {
+          showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: const Text('You won!'),
+                content: Text('Your score is ${responseJson['score']}'),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                    child: const Text('OK'),
+                  ),
+                ],
+              );
+            },
+          );
+        }
         setState(() {
           _score = responseJson['score'];
-          _alive = responseJson['alive'];
+          _playerState = responseJson['state'];
         });
       } else {
         showDialog(
@@ -175,7 +194,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 BarChartRodData(
                   toY: _playersInfo[i][2].toDouble(),
                   width: 20,
-                  color: _playersInfo[i][3] ? Colors.blue : Colors.red,
+                  color: _playersInfo[i][3] == 'alive' ? Colors.blue : _playersInfo[i][3] == 'dead' ? Colors.red : Colors.green,
                 ),
               ],
             ),
@@ -279,11 +298,10 @@ class _MyHomePageState extends State<MyHomePage> {
             },
             child: const Text('Start Game'),
           ),
-          if (_logicalState == 'GameStarted') quizBlock,
+          if (_logicalState == 'GameStarted' && _playerState == 'alive') quizBlock,
           if (_logicalState == 'GameStarted') gameVizBlock,
         ],
       ),
-
     ) 
   );
   }
@@ -335,7 +353,6 @@ class _MenuFormState extends State<MenuForm> {
         });
       }
     } catch (e) {
-
     }
   }
 
@@ -523,13 +540,17 @@ class _MenuFormState extends State<MenuForm> {
           ),
           if (_publicGames.isEmpty) const Text('No public games found'),
           if (_publicGames.isNotEmpty) Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               for (var game in _publicGames)
-                ElevatedButton(
-                  onPressed: () {
-                    joinGame(game[0], _playerNameController.text);
-                  },
-                  child: Text("${game[0].toString()} created by ${game[1]}")
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: ElevatedButton(
+                    onPressed: () {
+                      joinGame(game[0], _playerNameController.text);
+                    },
+                    child: Text("${game[0].toString()} created by ${game[1]}")
+                  )
                 )
             ]
           )

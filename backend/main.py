@@ -36,13 +36,13 @@ class Player(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(80), nullable=False)
     score = db.Column(db.Integer, default=0)
-    alive = db.Column(db.Boolean, default=True)
+    state = db.Column(db.String(80), default="alive")
 
     game_id = db.Column(db.Integer, db.ForeignKey('game.id'))
     game = db.relationship("Game", backref=db.backref("game", uselist=False))
 
     def __repr__(self):
-        return f"Player(id={self.id}, name={self.name}, score={self.score}), alive={self.alive})"
+        return f"Player(id={self.id}, name={self.name}, score={self.score}), state={self.state})"
 
 class GameResource(Resource):
     ### Create Game
@@ -107,7 +107,7 @@ class GameResource(Resource):
             }, 404
 
         players = Player.query.filter_by(game_id=game_id).all()
-        players_info = [[player.id, player.name, player.score, player.alive] for player in players]
+        players_info = [[player.id, player.name, player.score, player.state] for player in players]
         
         return {
             "game_id": game.id,
@@ -143,23 +143,28 @@ class PlayerResource(Resource):
                 "error": "game not started"
             }, 400
 
-        if player.alive is False:
+        if player.state == "dead":
             return {
                 "error": "player is dead"
+            }, 400
+        
+        if player.state == "won":
+            return {
+                "error": "player has won"
             }, 400
 
         if game.questions[player.score][5] == answer:
             player.score += 1
         else:
-            player.alive = False
+            player.state = "dead"
 
         if player.score == len(game.questions):
-            player.score = 0
+            player.state = "won"
 
         db.session.commit()
         return {
             "score": player.score,
-            "alive": player.alive
+            "state": player.state
         }
     
     ### Start Game
