@@ -10,7 +10,7 @@ db = SQLAlchemy(app)
 
 def generate_questions():
     questions = [
-        ["What is the capital of France?", "Paris", "London", "Berlin", "Madrid", 0],
+        ["What is the determinant of the matrix $\left(\begin{array}{ll}5 & 5 \\ 2 & 6\end{array}\right) ?$", "$\frac{1}{20}$", "13", "20", "40", 0],
         ["What is the capital of Germany?", "Berlin", "London", "Paris", "Madrid", 0],
         ["What is the capital of Spain?", "Madrid", "London", "Berlin", "Paris", 0],
         ["What is the capital of England?", "London", "Madrid", "Berlin", "Paris", 0],

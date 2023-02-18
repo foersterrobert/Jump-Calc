@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:async';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter_tex/flutter_tex.dart';
 
 const serverUrl = 'http://192.168.1.14:5000'; //'https://robertfoerster.pythonanywhere.com';
 
@@ -234,32 +235,32 @@ class _MyHomePageState extends State<MyHomePage> {
     Widget quizBlock = Column(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
-        Text(_questions[_score][0]),
+        _score < _questions.length ? TeXView(child: TeXViewDocument(_questions[_score][0])) : const Text('Game Finished'),
         Row(
           children: [
             ElevatedButton(
               onPressed: () {
                 answerQuestion(0);
               },
-              child: Text(_questions[_score][1]),
+              child: _score < _questions.length ? TeXView(child: TeXViewDocument(_questions[_score][1])) : const Text(''),
             ),
             ElevatedButton(
               onPressed: () {
                 answerQuestion(1);
               },
-              child: Text(_questions[_score][2])
+              child: _score < _questions.length ? TeXView(child: TeXViewDocument(_questions[_score][2])) : const Text(''),
             ),
             ElevatedButton(
               onPressed: () {
                 answerQuestion(2);
               },
-              child: Text(_questions[_score][3]),
+              child: _score < _questions.length ? TeXView(child: TeXViewDocument(_questions[_score][3])) : const Text(''),
             ),
             ElevatedButton(
               onPressed: () {
                 answerQuestion(3);
               },
-              child: Text(_questions[_score][4]),
+              child: _score < _questions.length ? TeXView(child: TeXViewDocument(_questions[_score][4])) : const Text(''),
             ),
           ]
         )
@@ -298,6 +299,7 @@ class _MyHomePageState extends State<MyHomePage> {
             },
             child: const Text('Start Game'),
           ),
+          // if game started and alive and score < 9 show quiz
           if (_logicalState == 'GameStarted' && _playerState == 'alive') quizBlock,
           if (_logicalState == 'GameStarted') gameVizBlock,
         ],
