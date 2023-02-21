@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:async';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:flutter_tex/flutter_tex.dart';
 
 const serverUrl = 'http://192.168.1.14:5000'; //'https://robertfoerster.pythonanywhere.com';
 
@@ -43,7 +42,6 @@ class _MyHomePageState extends State<MyHomePage> {
   String _playerName = '';
   List<dynamic> _playersInfo = [];
   List<dynamic> _questions = [
-        ["What is the capital of India?", "New Delhi", "Madrid", "Berlin", "Paris", 0],
     ];
 
   Future<void> startGame() async {
@@ -235,32 +233,32 @@ class _MyHomePageState extends State<MyHomePage> {
     Widget quizBlock = Column(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
-        _score < _questions.length ? TeXView(child: TeXViewDocument(_questions[_score][0])) : const Text('Game Finished'),
+        _score < _questions.length ? Image.memory(_questions[_score][0]) : const Text('Game Finished'),
         Row(
           children: [
             ElevatedButton(
               onPressed: () {
                 answerQuestion(0);
               },
-              child: _score < _questions.length ? TeXView(child: TeXViewDocument(_questions[_score][1])) : const Text(''),
+              child: _score < _questions.length ? Image.memory(_questions[_score][1]) : const Text(''),
             ),
             ElevatedButton(
               onPressed: () {
                 answerQuestion(1);
               },
-              child: _score < _questions.length ? TeXView(child: TeXViewDocument(_questions[_score][2])) : const Text(''),
+              child: _score < _questions.length ? Image.memory(_questions[_score][2]) : const Text(''),
             ),
             ElevatedButton(
               onPressed: () {
                 answerQuestion(2);
               },
-              child: _score < _questions.length ? TeXView(child: TeXViewDocument(_questions[_score][3])) : const Text(''),
+              child: _score < _questions.length ? Image.memory(_questions[_score][3]) : const Text(''),
             ),
             ElevatedButton(
               onPressed: () {
                 answerQuestion(3);
               },
-              child: _score < _questions.length ? TeXView(child: TeXViewDocument(_questions[_score][4])) : const Text(''),
+              child: _score < _questions.length ? Image.memory(_questions[_score][4]) : const Text(''),
             ),
           ]
         )
@@ -288,7 +286,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 _gameId = gameId;
                 _playerId = playerId;
                 _playerName = playerName;
-              _questions = questions;
+                _questions = questions;
               });
             },
           ),
@@ -387,6 +385,11 @@ class _MenuFormState extends State<MenuForm> {
         final _newGameId = responseJson['game_id'];
         final _newPlayerId = responseJson['player_id'];
         final _questions = responseJson['questions'];
+        for (var i = 0; i < _questions.length; i++) {
+          for (var j = 0; j < _questions[i].length - 1; j++) {
+            _questions[i][j] = base64Decode(_questions[i][j]);
+          }
+        }
         widget.onGameCreated(_newGameId, _newPlayerId, _newPlayerName, _questions);
       } else {
         showDialog(

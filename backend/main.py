@@ -2,6 +2,8 @@ import random
 from flask import Flask
 from flask_restful import Api, Resource
 from flask_sqlalchemy import SQLAlchemy
+import os
+import base64
 
 app = Flask(__name__)
 api = Api(app)
@@ -9,17 +11,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
 db = SQLAlchemy(app)
 
 def generate_questions():
-    questions = [
-        ["What is the determinant of the matrix $\left(\begin{array}{ll}5 & 5 \\ 2 & 6\end{array}\right) ?$", "$\frac{1}{20}$", "13", "20", "40", 0],
-        ["What is the capital of Germany?", "Berlin", "London", "Paris", "Madrid", 0],
-        ["What is the capital of Spain?", "Madrid", "London", "Berlin", "Paris", 0],
-        ["What is the capital of England?", "London", "Madrid", "Berlin", "Paris", 0],
-        ["What is the capital of Italy?", "Rome", "Madrid", "Berlin", "Paris", 0],
-        ["What is the capital of Portugal?", "Lisbon", "Madrid", "Berlin", "Paris", 0],
-        ["What is the capital of Poland?", "Warsaw", "Madrid", "Berlin", "Paris", 0],
-        ["What is the capital of Sweden?", "Stockholm", "Madrid", "Berlin", "Paris", 0],
-        ["What is the capital of Norway?", "Oslo", "Madrid", "Berlin", "Paris", 0],
-    ]
+    questions = os.listdir("backend/processedImgs")
     return questions
 
 class Game(db.Model):
@@ -64,10 +56,20 @@ class GameResource(Resource):
         db.session.add(player)
         db.session.commit()
 
+        questions = []
+        for question in game.questions:
+            question_info = []
+            question_images = ["q.png", "a1.png", "a2.png", "a3.png", "a4.png"]
+            for question_image in question_images:
+                with open(f"backend/processedImgs/{question}/{question_image}", "rb") as f:
+                    question_info.append(base64.b64encode(f.read()).decode("ascii"))
+            question_info.append(int(question.split("_")[1]))
+            questions.append(question_info)
+
         return {
             "game_id": game.id,
             "player_id": player.id,
-            "questions": game.questions
+            "questions": questions
         }
     
     ### Join Game
@@ -92,10 +94,21 @@ class GameResource(Resource):
 
         db.session.add(player)
         db.session.commit()
+
+        questions = []
+        for question in game.questions:
+            question_info = []
+            question_images = ["q.png", "a1.png", "a2.png", "a3.png", "a4.png"]
+            for question_image in question_images:
+                with open(f"backend/processedImgs/{question}/{question_image}", "rb") as f:
+                    question_info.append(base64.b64encode(f.read()).decode("ascii"))
+            question_info.append(int(question.split("_")[1]))
+            questions.append(question_info)
+
         return {
             "game_id": game.id,
             "player_id": player.id,
-            "questions": game.questions
+            "questions": questions
         }
     
     ### Get Game
@@ -153,8 +166,9 @@ class PlayerResource(Resource):
                 "error": "player has won"
             }, 400
 
-        if game.questions[player.score][5] == answer:
+        if int(game.questions[player.score].split("_")[1]) == answer:
             player.score += 1
+            print("correct")
         else:
             player.state = "dead"
 
