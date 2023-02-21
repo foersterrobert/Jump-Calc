@@ -63,7 +63,6 @@ class GameResource(Resource):
             for question_image in question_images:
                 with open(f"backend/processedImgs/{question}/{question_image}", "rb") as f:
                     question_info.append(base64.b64encode(f.read()).decode("ascii"))
-            question_info.append(int(question.split("_")[1]))
             questions.append(question_info)
 
         return {
@@ -102,7 +101,6 @@ class GameResource(Resource):
             for question_image in question_images:
                 with open(f"backend/processedImgs/{question}/{question_image}", "rb") as f:
                     question_info.append(base64.b64encode(f.read()).decode("ascii"))
-            question_info.append(int(question.split("_")[1]))
             questions.append(question_info)
 
         return {
@@ -111,21 +109,19 @@ class GameResource(Resource):
             "questions": questions
         }
     
-    ### Get Game
-    def get(self, game_id):
-        game = Game.query.filter_by(id=game_id).first()
-        if game is None:
+    ### Leave Game
+    def delete(self, player_id):
+        player = Player.query.filter_by(id=player_id).first()
+        if player is None:
             return {
-                "error": "game not found"
+                "error": "player not found"
             }, 404
 
-        players = Player.query.filter_by(game_id=game_id).all()
-        players_info = [[player.id, player.name, player.score, player.state] for player in players]
-        
+        player.state = "left"
+        db.session.commit()
+
         return {
-            "game_id": game.id,
-            "started": game.started,
-            "players": players_info
+            "message": "player deleted"
         }
     
     ### Get all public games
@@ -178,7 +174,25 @@ class PlayerResource(Resource):
         db.session.commit()
         return {
             "score": player.score,
-            "state": player.state
+            "state": player.state,
+            "answer": int(game.questions[player.score].split("_")[1]) if player.score < len(game.questions) else None
+        }
+
+    ### Get Game
+    def get(self, game_id):
+        game = Game.query.filter_by(id=game_id).first()
+        if game is None:
+            return {
+                "error": "game not found"
+            }, 404
+
+        players = Player.query.filter_by(game_id=game_id).all()
+        players_info = [[player.id, player.name, player.score, player.state] for player in players]
+        
+        return {
+            "game_id": game.id,
+            "started": game.started,
+            "players": players_info
         }
     
     ### Start Game
@@ -198,7 +212,7 @@ class PlayerResource(Resource):
             "game_id": game.id
         }
 
-api.add_resource(GameResource, "/game/<string:player_name>/<public>", "/game/<int:game_id>/<string:player_name>", "/game/<int:game_id>", "/game")
+api.add_resource(GameResource, "/game/<string:player_name>/<public>", "/game/<int:game_id>/<string:player_name>", "/game/<int:player_id>", "/game")
 api.add_resource(PlayerResource, "/player/<int:game_id>", "/player/<int:player_id>/<int:answer>")
 with app.app_context():
     db.create_all()

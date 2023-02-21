@@ -54,6 +54,23 @@ class _MyHomePageState extends State<MyHomePage> {
       } 
   }
 
+  Future<void> leaveGame() async {
+    final response = await http.delete(Uri.parse('$serverUrl/game/$_playerId'));
+    if (response.statusCode == 200) {
+      setState(() {
+        _score = 0;
+        _logicalState = 'NoGame';
+        _gameId = 0;
+        _playerId = 0;
+        _playerState = "alive";
+        _playerName = '';
+        _playersInfo = [];
+        _questions = [
+          ];
+      });
+    }
+  }
+
   Future<void> answerQuestion(_answer) async {
     try {
       final response = await http.put(Uri.parse('$serverUrl/player/$_playerId/$_answer'));
@@ -66,7 +83,13 @@ class _MyHomePageState extends State<MyHomePage> {
             builder: (BuildContext context) {
               return AlertDialog(
                 title: const Text('Game Over'),
-                content: Text('Your score is ${responseJson['score']}'),
+                content: Column(
+                  children: [
+                    Text('Your score is ${responseJson['score']}\nCorrect answer is:'),
+                    Image.memory(_questions[_score][responseJson['answer'] + 1])
+                    ],
+                  mainAxisSize: MainAxisSize.min,
+                ),
                 actions: [
                   TextButton(
                     onPressed: () {
@@ -145,7 +168,7 @@ class _MyHomePageState extends State<MyHomePage> {
   Future<void> getState() async {
     if (_logicalState == 'NoGame') return;
     try {
-      final response = await http.get(Uri.parse('$serverUrl/game/$_gameId'));
+      final response = await http.get(Uri.parse('$serverUrl/player/$_gameId'));
       final responseJson = jsonDecode(response.body);
 
       if (response.statusCode == 200) {
@@ -178,7 +201,7 @@ class _MyHomePageState extends State<MyHomePage> {
     Widget gameInfoBlock = Column(
       children: [
         Text('GameId: $_gameId'),
-        for (var player in _playersInfo) Text('Player: ${player[1]} Score: ${player[2]} Alive: ${player[3]}'),
+        for (var player in _playersInfo) Text('Player: ${player[1]} Score: ${player[2]} State: ${player[3]}'),
       ],
     );
 
@@ -193,7 +216,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 BarChartRodData(
                   toY: _playersInfo[i][2].toDouble(),
                   width: 20,
-                  color: _playersInfo[i][3] == 'alive' ? Colors.blue : _playersInfo[i][3] == 'dead' ? Colors.red : Colors.green,
+                  color: _playersInfo[i][3] == 'alive' ? Colors.blue : _playersInfo[i][3] == 'dead' ? Colors.red : _playersInfo[i][3] == 'won' ? Colors.green : Colors.grey,
                 ),
               ],
             ),
@@ -234,7 +257,7 @@ class _MyHomePageState extends State<MyHomePage> {
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
         _score < _questions.length ? Image.memory(_questions[_score][0]) : const Text('Game Finished'),
-        Row(
+        Wrap(
           children: [
             ElevatedButton(
               onPressed: () {
@@ -290,7 +313,7 @@ class _MyHomePageState extends State<MyHomePage> {
               });
             },
           ),
-          if (_logicalState == 'GameStarted' || _logicalState == 'GameCreated' || _logicalState == 'GameJoined') gameInfoBlock,
+          if (_logicalState != 'NoGame') gameInfoBlock,
           if (_logicalState == 'GameCreated') ElevatedButton(
             onPressed: () {
               startGame();
@@ -300,6 +323,12 @@ class _MyHomePageState extends State<MyHomePage> {
           // if game started and alive and score < 9 show quiz
           if (_logicalState == 'GameStarted' && _playerState == 'alive') quizBlock,
           if (_logicalState == 'GameStarted') gameVizBlock,
+          if (_logicalState != 'NoGame') ElevatedButton(
+            onPressed: () {
+              leaveGame();
+            },
+            child: const Text('Leave Game'),
+          ),
         ],
       ),
     ) 
@@ -386,7 +415,7 @@ class _MenuFormState extends State<MenuForm> {
         final _newPlayerId = responseJson['player_id'];
         final _questions = responseJson['questions'];
         for (var i = 0; i < _questions.length; i++) {
-          for (var j = 0; j < _questions[i].length - 1; j++) {
+          for (var j = 0; j < _questions[i].length; j++) {
             _questions[i][j] = base64Decode(_questions[i][j]);
           }
         }
@@ -432,7 +461,7 @@ class _MenuFormState extends State<MenuForm> {
   }
   
   Future<void> joinGame(_newGameId, _newPlayerName) async {
-    if (_newPlayerName.isEmpty || _newGameId.isEmpty) {
+    if (_newPlayerName.isEmpty ) {
       showDialog(
         context: context,
         builder: (BuildContext context) {
@@ -460,6 +489,11 @@ class _MenuFormState extends State<MenuForm> {
         final _newGameId = responseJson['game_id'];
         final _newPlayerId = responseJson['player_id'];
         final _questions = responseJson['questions'];
+        for (var i = 0; i < _questions.length; i++) {
+          for (var j = 0; j < _questions[i].length; j++) {
+            _questions[i][j] = base64Decode(_questions[i][j]);
+          }
+        }
         widget.onGameJoined(_newGameId, _newPlayerId, _newPlayerName, _questions);
       } else {
         showDialog(
