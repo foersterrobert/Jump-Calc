@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import 'dart:async';
 import 'package:fl_chart/fl_chart.dart';
 
-const serverUrl = 'http://192.168.1.14:5000'; //'https://robertfoerster.pythonanywhere.com';
+const serverUrl = 'http://192.168.1.17:5000'; //'https://robertfoerster.pythonanywhere.com';
 
 void main() {
   runApp(const MyApp());
@@ -43,6 +43,15 @@ class _MyHomePageState extends State<MyHomePage> {
   List<dynamic> _playersInfo = [];
   List<dynamic> _questions = [
     ];
+  List scoreMap = [
+    [0.0, 1.0],
+    [0.14, 0.82],
+    [0.28, 0.8],
+    [0.42, 0.7],
+    [0.56, 0.5],
+    [0.7, 0.4],
+    [0.8, 0.33]
+  ];
 
   Future<void> startGame() async {
       final response = await http.patch(Uri.parse('$serverUrl/player/$_gameId'));
@@ -205,52 +214,26 @@ class _MyHomePageState extends State<MyHomePage> {
       ],
     );
 
-    Widget gameVizBlock = AspectRatio(
-      aspectRatio: 2,
-      child: BarChart(
-        BarChartData(
-          barGroups: [
-            for (var i = 0; i < _playersInfo.length; i++) BarChartGroupData(
-              x: i,
-              barRods: [
-                BarChartRodData(
-                  toY: _playersInfo[i][2].toDouble(),
-                  width: 20,
-                  color: _playersInfo[i][3] == 'alive' ? Colors.blue : _playersInfo[i][3] == 'dead' ? Colors.red : _playersInfo[i][3] == 'won' ? Colors.green : Colors.grey,
-                ),
-              ],
-            ),
-          ],
-          titlesData: FlTitlesData(
-            show: true,
-            bottomTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 30,
-                getTitlesWidget: (double value, TitleMeta meta) {
-                  return SideTitleWidget(
-                    axisSide: meta.axisSide,
-                    space: 4,
-                    child: Text(
-                      _playersInfo[value.toInt()][1],
-                      style: const TextStyle(
-                        color: Colors.black,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 10,
-                      ),
-                    ),
-                  );
-                }
-              )
-            )
-          ),
-          gridData: FlGridData(show: false),
-          borderData: FlBorderData(show: false),
-          alignment: BarChartAlignment.spaceAround,
-          maxY: 10,
-          backgroundColor: Color.fromARGB(255, 165, 201, 206)
+    Widget gameLobbyBlock = Wrap(
+      children: [
+        for (var playerIdx = 0; playerIdx < _playersInfo.length; playerIdx++) Column(
+          children: [
+            Text(_playersInfo[playerIdx][1]),
+            Image.asset('assets/images/pi_${(playerIdx % _playersInfo.length) + 1}.png'),
+          ]
         )
-      )
+      ]
+    );
+
+    Widget gameVizBlock = Stack(
+      children: [
+        Image.asset('assets/images/level.png'),
+        for (var playerIdx = 0; playerIdx < _playersInfo.length; playerIdx++) Positioned(
+          left: scoreMap[_playersInfo[playerIdx][2]][0] * MediaQuery.of(context).size.width,
+          top: scoreMap[_playersInfo[playerIdx][2]][1] * MediaQuery.of(context).size.width * 0.5,
+          child: Image.asset('assets/images/pi_${(playerIdx % _playersInfo.length) + 1}.png', scale: 2.4,),
+        ),
+      ],
     );
 
     Widget quizBlock = Column(
@@ -314,6 +297,7 @@ class _MyHomePageState extends State<MyHomePage> {
             },
           ),
           if (_logicalState != 'NoGame') gameInfoBlock,
+          if (_logicalState == 'GameCreated' || _logicalState == 'GameJoined') gameLobbyBlock,
           if (_logicalState == 'GameCreated') ElevatedButton(
             onPressed: () {
               startGame();
@@ -415,7 +399,7 @@ class _MenuFormState extends State<MenuForm> {
         final _newPlayerId = responseJson['player_id'];
         final _questions = responseJson['questions'];
         for (var i = 0; i < _questions.length; i++) {
-          for (var j = 0; j < _questions[i].length; j++) {
+          for (var j = 0; j < _questions[i].length - 1; j++) {
             _questions[i][j] = base64Decode(_questions[i][j]);
           }
         }
@@ -490,7 +474,7 @@ class _MenuFormState extends State<MenuForm> {
         final _newPlayerId = responseJson['player_id'];
         final _questions = responseJson['questions'];
         for (var i = 0; i < _questions.length; i++) {
-          for (var j = 0; j < _questions[i].length; j++) {
+          for (var j = 0; j < _questions[i].length - 1; j++) {
             _questions[i][j] = base64Decode(_questions[i][j]);
           }
         }
