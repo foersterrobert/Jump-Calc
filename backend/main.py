@@ -4,6 +4,7 @@ from flask_restful import Api, Resource
 from flask_sqlalchemy import SQLAlchemy
 import os
 import base64
+import random
 
 app = Flask(__name__)
 api = Api(app)
@@ -11,7 +12,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
 db = SQLAlchemy(app)
 
 def generate_questions():
-    questions = os.listdir("backend/processedImgs")
+    questions = random.choices(os.listdir("backend/processedImgs"), k=6)
     return questions
 
 class Game(db.Model):
@@ -63,6 +64,7 @@ class GameResource(Resource):
             for question_image in question_images:
                 with open(f"backend/processedImgs/{question}/{question_image}", "rb") as f:
                     question_info.append(base64.b64encode(f.read()).decode("ascii"))
+            question_info.append(question.split("_")[1])
             questions.append(question_info)
 
         return {
@@ -101,6 +103,7 @@ class GameResource(Resource):
             for question_image in question_images:
                 with open(f"backend/processedImgs/{question}/{question_image}", "rb") as f:
                     question_info.append(base64.b64encode(f.read()).decode("ascii"))
+            question_info.append(question.split("_")[1])
             questions.append(question_info)
 
         return {
