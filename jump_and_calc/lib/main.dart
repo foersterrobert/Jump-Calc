@@ -2,9 +2,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:async';
-import 'package:fl_chart/fl_chart.dart';
 
-const serverUrl = 'http://192.168.1.17:5000'; //'https://robertfoerster.pythonanywhere.com';
+const serverUrl = 'http://192.168.0.101:5000'; //'https://robertfoerster.pythonanywhere.com';
 
 void main() {
   runApp(const MyApp());
