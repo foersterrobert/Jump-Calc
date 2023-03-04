@@ -2,8 +2,9 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:async';
+import 'menuForm.dart';
 
-const serverUrl = 'http://192.168.0.101:5000'; //'https://robertfoerster.pythonanywhere.com';
+const serverUrl = 'http://192.168.1.17:5000'; //'https://robertfoerster.pythonanywhere.com';
 
 void main() {
   runApp(const MyApp());
@@ -32,48 +33,47 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _score = 0;
-  Timer? _timer;
-  String _logicalState = 'NoGame';
-  int _gameId = 0;
-  int _playerId = 0;
-  String _playerState = "alive";
-  String _playerName = '';
-  List<dynamic> _playersInfo = [];
-  List<dynamic> _questions = [
-    ];
+  Timer? fetchTimer;
+  int score = 0;
+  String logicalState = 'NoGame';
+  int gameId = 0;
+  int playerId = 0;
+  String playerState = "alive";
+  String playerName = '';
+  List<dynamic> playersInfo = [];
+  List<dynamic> questions = [];
   List scoreMap = [
-    [0.0, 1.0],
-    [0.14, 0.82],
-    [0.28, 0.8],
-    [0.42, 0.7],
-    [0.56, 0.5],
-    [0.7, 0.4],
-    [0.8, 0.33]
+    [0.0, 0.744],
+    [0.13, 0.625],
+    [0.26, 0.548],
+    [0.39, 0.463],
+    [0.52, 0.3815],
+    [0.65, 0.3],
+    [0.78, 0.2185],
   ];
 
   Future<void> startGame() async {
-      final response = await http.patch(Uri.parse('$serverUrl/player/$_gameId'));
+      final response = await http.patch(Uri.parse('$serverUrl/player/$gameId'));
       
       if (response.statusCode == 200) {
         setState(() {
-          _logicalState = 'GameStarted';
+          logicalState = 'GameStarted';
         });
       } 
   }
 
   Future<void> leaveGame() async {
-    final response = await http.delete(Uri.parse('$serverUrl/game/$_playerId'));
+    final response = await http.delete(Uri.parse('$serverUrl/game/$playerId'));
     if (response.statusCode == 200) {
       setState(() {
-        _score = 0;
-        _logicalState = 'NoGame';
-        _gameId = 0;
-        _playerId = 0;
-        _playerState = "alive";
-        _playerName = '';
-        _playersInfo = [];
-        _questions = [
+        score = 0;
+        logicalState = 'NoGame';
+        gameId = 0;
+        playerId = 0;
+        playerState = "alive";
+        playerName = '';
+        playersInfo = [];
+        questions = [
           ];
       });
     }
@@ -81,7 +81,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> answerQuestion(_answer) async {
     try {
-      final response = await http.put(Uri.parse('$serverUrl/player/$_playerId/$_answer'));
+      final response = await http.put(Uri.parse('$serverUrl/player/$playerId/$_answer'));
       final responseJson = jsonDecode(response.body);
 
       if (response.statusCode == 200) {
@@ -94,7 +94,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 content: Column(
                   children: [
                     Text('Your score is ${responseJson['score']}\nCorrect answer is:'),
-                    Image.memory(_questions[_score][responseJson['answer'] + 1])
+                    Image.memory(questions[score][responseJson['answer'] + 1])
                     ],
                   mainAxisSize: MainAxisSize.min,
                 ),
@@ -130,8 +130,8 @@ class _MyHomePageState extends State<MyHomePage> {
           );
         }
         setState(() {
-          _score = responseJson['score'];
-          _playerState = responseJson['state'];
+          score = responseJson['score'];
+          playerState = responseJson['state'];
         });
       } else {
         showDialog(
@@ -174,17 +174,17 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Future<void> getState() async {
-    if (_logicalState == 'NoGame') return;
+    if (logicalState == 'NoGame') return;
     try {
-      final response = await http.get(Uri.parse('$serverUrl/player/$_gameId'));
+      final response = await http.get(Uri.parse('$serverUrl/player/$gameId'));
       final responseJson = jsonDecode(response.body);
 
       if (response.statusCode == 200) {
         setState(() {
           if (responseJson['started'] == true) {
-            _logicalState = 'GameStarted';
+            logicalState = 'GameStarted';
           }
-          _playersInfo = responseJson['players'];
+          playersInfo = responseJson['players'];
         });
       }
     } catch (e) {
@@ -195,12 +195,12 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     super.initState();
-    _timer = Timer.periodic(const Duration(seconds: 1), (Timer t) => getState());
+    fetchTimer = Timer.periodic(const Duration(seconds: 1), (Timer t) => getState());
   }
 
   @override
   void dispose() {
-    _timer?.cancel();
+    fetchTimer?.cancel();
     super.dispose();
   }
 
@@ -208,17 +208,17 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     Widget gameInfoBlock = Column(
       children: [
-        Text('GameId: $_gameId'),
-        for (var player in _playersInfo) Text('Player: ${player[1]} Score: ${player[2]} State: ${player[3]}'),
+        Text('GameId: $gameId'),
+        for (var player in playersInfo) Text('Player: ${player[1]} Score: ${player[2]} State: ${player[3]}'),
       ],
     );
 
     Widget gameLobbyBlock = Wrap(
       children: [
-        for (var playerIdx = 0; playerIdx < _playersInfo.length; playerIdx++) Column(
+        for (var playerIdx = 0; playerIdx < playersInfo.length; playerIdx++) Column(
           children: [
-            Text(_playersInfo[playerIdx][1]),
-            Image.asset('assets/images/pi_${(playerIdx % _playersInfo.length) + 1}.png'),
+            Text(playersInfo[playerIdx][1]),
+            Image.asset('assets/images/pi_${(playerIdx % playersInfo.length) + 1}.png'),
           ]
         )
       ]
@@ -227,43 +227,23 @@ class _MyHomePageState extends State<MyHomePage> {
     Widget gameVizBlock = Stack(
       children: [
         Image.asset('assets/images/level.png'),
-        for (var playerIdx = 0; playerIdx < _playersInfo.length; playerIdx++) Positioned(
-          left: scoreMap[_playersInfo[playerIdx][2]][0] * MediaQuery.of(context).size.width,
-          top: scoreMap[_playersInfo[playerIdx][2]][1] * MediaQuery.of(context).size.width * 0.5,
-          child: Image.asset('assets/images/pi_${(playerIdx % _playersInfo.length) + 1}.png', scale: 2.4,),
-        ),
+        for (var playerIdx = 0; playerIdx < playersInfo.length; playerIdx++) Positioned(
+            left: scoreMap[playersInfo[playerIdx][2]][0] * MediaQuery.of(context).size.width,
+            top: scoreMap[playersInfo[playerIdx][2]][1] * MediaQuery.of(context).size.width * 0.646875,
+            child: Image.asset('assets/images/pi_${(playerIdx % playersInfo.length) + 1}.png', width: MediaQuery.of(context).size.width * 0.08),
+          ),
       ],
     );
 
     Widget quizBlock = Column(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
-        _score < _questions.length ? Image.memory(_questions[_score][0]) : const Text('Game Finished'),
+        score < questions.length ? Image.memory(questions[score][0]) : const Text('Game Finished'),
         Wrap(
           children: [
-            ElevatedButton(
-              onPressed: () {
-                answerQuestion(0);
-              },
-              child: _score < _questions.length ? Image.memory(_questions[_score][1]) : const Text(''),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                answerQuestion(1);
-              },
-              child: _score < _questions.length ? Image.memory(_questions[_score][2]) : const Text(''),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                answerQuestion(2);
-              },
-              child: _score < _questions.length ? Image.memory(_questions[_score][3]) : const Text(''),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                answerQuestion(3);
-              },
-              child: _score < _questions.length ? Image.memory(_questions[_score][4]) : const Text(''),
+            for (var answerIdx = 0; answerIdx < 4; answerIdx++) ElevatedButton(
+              onPressed: () {answerQuestion(answerIdx);},
+              child: score < questions.length ? Image.memory(questions[score][answerIdx + 1]) : const Text(''),
             ),
           ]
         )
@@ -275,38 +255,39 @@ class _MyHomePageState extends State<MyHomePage> {
       padding: const EdgeInsets.all(16.0),
       child: ListView(
         children: [
-          if (_logicalState == 'NoGame') MenuForm(
-            onGameCreated: (gameId, playerId, playerName, questions) {
+          if (logicalState == 'NoGame') MenuForm(
+            onGameCreated: (_gameId, _playerId, _playerName, _questions) {
               setState(() {
-                _logicalState = 'GameCreated';
-                _gameId = gameId;
-                _playerId = playerId;
-                _playerName = playerName;
-                _questions = questions;
+                logicalState = 'GameCreated';
+                gameId = _gameId;
+                playerId = _playerId;
+                playerName = _playerName;
+                questions = _questions;
               });
             },
-            onGameJoined: (gameId, playerId, playerName, questions) {
+            onGameJoined: (_gameId, _playerId, _playerName, _questions) {
               setState(() {
-                _logicalState = 'GameJoined';
-                _gameId = gameId;
-                _playerId = playerId;
-                _playerName = playerName;
-                _questions = questions;
+                logicalState = 'GameJoined';
+                gameId = _gameId;
+                playerId = _playerId;
+                playerName = _playerName;
+                questions = _questions;
               });
             },
+            serverUrl: serverUrl,
           ),
-          if (_logicalState != 'NoGame') gameInfoBlock,
-          if (_logicalState == 'GameCreated' || _logicalState == 'GameJoined') gameLobbyBlock,
-          if (_logicalState == 'GameCreated') ElevatedButton(
+          if (logicalState != 'NoGame') gameInfoBlock,
+          if (logicalState == 'GameCreated' || logicalState == 'GameJoined') gameLobbyBlock,
+          if (logicalState == 'GameCreated') ElevatedButton(
             onPressed: () {
               startGame();
             },
             child: const Text('Start Game'),
           ),
           // if game started and alive and score < 9 show quiz
-          if (_logicalState == 'GameStarted' && _playerState == 'alive') quizBlock,
-          if (_logicalState == 'GameStarted') gameVizBlock,
-          if (_logicalState != 'NoGame') ElevatedButton(
+          if (logicalState == 'GameStarted' && playerState == 'alive') quizBlock,
+          if (logicalState == 'GameStarted') gameVizBlock,
+          if (logicalState != 'NoGame') ElevatedButton(
             onPressed: () {
               leaveGame();
             },
@@ -316,267 +297,5 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
     ) 
   );
-  }
-}
-
-class MenuForm extends StatefulWidget {
-  final Function(int, int, String, dynamic) onGameCreated;
-  final Function(int, int, String, dynamic) onGameJoined;
-
-  const MenuForm({
-    Key? key,
-    required this.onGameCreated,
-    required this.onGameJoined,
-  }) : super(key: key);
-
-  @override
-  _MenuFormState createState() => _MenuFormState();
-}
-
-class _MenuFormState extends State<MenuForm> {
-  final _playerNameController = TextEditingController();
-  final _gameIdController = TextEditingController();
-  bool _public = false;
-  Timer? _timer;
-  List<dynamic>_publicGames = []; 
-
-  @override
-  void initState() {
-    super.initState();
-    _timer = Timer.periodic(const Duration(seconds: 1), (Timer t) => getPublicGames());
-  }
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    _playerNameController.dispose();
-    _gameIdController.dispose();
-    super.dispose();
-  }
-
-  Future<void> getPublicGames() async {
-    try {
-      final response = await http.patch(Uri.parse('$serverUrl/game'));
-      final responseJson = jsonDecode(response.body);
-
-      if (response.statusCode == 200) {
-        setState(() {
-          _publicGames = responseJson['games'];
-        });
-      }
-    } catch (e) {
-    }
-  }
-
-  Future<void> createGame(_newPlayerName, _public) async {
-    if (_newPlayerName.isEmpty) {
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: const Text('Error'),
-            content: const Text('Player name cannot be empty'),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-                child: const Text('OK'),
-              ),
-            ],
-          );
-        },
-      );
-      return;
-    }
-    try {
-      final response = await http.post(Uri.parse('$serverUrl/game/$_newPlayerName/$_public'));
-      final responseJson = jsonDecode(response.body);
-      
-      if (response.statusCode == 200) {
-        final _newGameId = responseJson['game_id'];
-        final _newPlayerId = responseJson['player_id'];
-        final _questions = responseJson['questions'];
-        for (var i = 0; i < _questions.length; i++) {
-          for (var j = 0; j < _questions[i].length - 1; j++) {
-            _questions[i][j] = base64Decode(_questions[i][j]);
-          }
-        }
-        widget.onGameCreated(_newGameId, _newPlayerId, _newPlayerName, _questions);
-      } else {
-        showDialog(
-          context: context,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              title: const Text('Error'),
-              content: Text(responseJson['error']),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                  child: const Text('OK'),
-                ),
-              ],
-            );
-          },
-        );
-      }
-    } catch (e) {
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: const Text('Error'),
-            content: const Text('Failed to create game'),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-                child: const Text('OK'),
-              ),
-            ],
-          );
-        },
-      );
-    }
-  }
-  
-  Future<void> joinGame(_newGameId, _newPlayerName) async {
-    if (_newPlayerName.isEmpty ) {
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: const Text('Error'),
-            content: const Text('Player name and game ID cannot be empty'),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-                child: const Text('OK'),
-              ),
-            ],
-          );
-        },
-      );
-      return;
-    }
-    try {
-      final response = await http.put(Uri.parse('$serverUrl/game/$_newGameId/$_newPlayerName'));
-      final responseJson = jsonDecode(response.body);
-      
-      if (response.statusCode == 200) {
-        final _newGameId = responseJson['game_id'];
-        final _newPlayerId = responseJson['player_id'];
-        final _questions = responseJson['questions'];
-        for (var i = 0; i < _questions.length; i++) {
-          for (var j = 0; j < _questions[i].length - 1; j++) {
-            _questions[i][j] = base64Decode(_questions[i][j]);
-          }
-        }
-        widget.onGameJoined(_newGameId, _newPlayerId, _newPlayerName, _questions);
-      } else {
-        showDialog(
-          context: context,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              title: const Text('Error'),
-              content: Text(responseJson['error']),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                  child: const Text('OK'),
-                ),
-              ],
-            );
-          },
-        );
-      }
-    } catch (e) {
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: const Text('Error'),
-            content: const Text('Failed to join game'),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-                child: const Text('OK'),
-              ),
-            ],
-          );
-        },
-      );
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-        children: [
-          TextField(
-            controller: _playerNameController,
-            decoration: const InputDecoration(
-              border: OutlineInputBorder(),
-              labelText: 'Player Name',
-            ),
-          ),
-          Row(
-            children: [
-              Switch(
-                value: _public,
-                onChanged: (value) {
-                  setState(() {
-                    _public = value;
-                  });
-                },
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  createGame(_playerNameController.text, _public);
-                }, 
-                child: const Text('Create Game'),
-              )
-            ],
-          ),
-          TextField(
-            controller: _gameIdController,
-            decoration: const InputDecoration(
-              border: OutlineInputBorder(),
-              labelText: 'Game ID',
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              joinGame(_gameIdController.text, _playerNameController.text);
-            },
-            child: const Text('Join Game'),
-          ),
-          if (_publicGames.isEmpty) const Text('No public games found'),
-          if (_publicGames.isNotEmpty) Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              for (var game in _publicGames)
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: ElevatedButton(
-                    onPressed: () {
-                      joinGame(game[0], _playerNameController.text);
-                    },
-                    child: Text("${game[0].toString()} created by ${game[1]}")
-                  )
-                )
-            ]
-          )
-        ]
-    );
   }
 }
