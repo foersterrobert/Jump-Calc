@@ -216,7 +216,7 @@ class _MyHomePageState extends State<MyHomePage> {
         for (var playerIdx = 0; playerIdx < playersInfo.length; playerIdx++) Column(
           children: [
             Text(playersInfo[playerIdx][1]),
-            Image.asset('assets/images/pi_${(playerIdx % playersInfo.length) + 1}.png'),
+            Image.asset('assets/images/pi_${(playerIdx % 10) + 1}.png'),
           ]
         )
       ]
@@ -228,7 +228,7 @@ class _MyHomePageState extends State<MyHomePage> {
         for (var playerIdx = 0; playerIdx < playersInfo.length; playerIdx++) Positioned(
             left: scoreMap[playersInfo[playerIdx][2]][0] * MediaQuery.of(context).size.width,
             top: scoreMap[playersInfo[playerIdx][2]][1] * MediaQuery.of(context).size.width * 0.646875,
-            child: Image.asset('assets/images/pi_${(playerIdx % playersInfo.length) + 1}.png', width: MediaQuery.of(context).size.width * 0.08),
+            child: Image.asset('assets/images/pi_${(playerIdx % 10) + 1}.png', width: MediaQuery.of(context).size.width * 0.08),
           ),
       ],
     );
