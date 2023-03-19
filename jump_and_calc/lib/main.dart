@@ -64,20 +64,18 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> leaveGame() async {
     final response = await http.delete(Uri.parse('$serverUrl/game/$playerId'));
-    if (response.statusCode == 200) {
-      setState(() {
-        score = 0;
-        logicalState = 'NoGame';
-        gameId = 0;
-        playerId = 0;
-        playerState = "alive";
-        playerName = '';
-        playersInfo = [];
-        questions = [
-          ];
-      });
+    setState(() {
+      score = 0;
+      logicalState = 'NoGame';
+      gameId = 0;
+      playerId = 0;
+      playerState = "alive";
+      playerName = '';
+      playersInfo = [];
+      questions = [
+        ];
+    });
     }
-  }
 
   Future<void> answerQuestion(_answer) async {
     try {
