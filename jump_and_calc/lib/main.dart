@@ -18,8 +18,8 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Jump&Calc',
       theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
+          scaffoldBackgroundColor: const Color.fromARGB(233, 233, 242, 255),
+        ),
       home: const MyHomePage(),
     );
   }
@@ -204,22 +204,24 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    Widget gameInfoBlock = Column(
+    Widget gameLobbyBlock = Column(
       children: [
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Wrap(
+            children: [
+              for (var playerIdx = 0; playerIdx < playersInfo.length; playerIdx++) Column(
+                children: [
+                  Text(playersInfo[playerIdx][1]),
+                  Image.asset('assets/images/pi_${(playerIdx % 10) + 1}.png', width: MediaQuery.of(context).size.width * 0.22),
+                ]
+              )
+            ],
+            alignment: WrapAlignment.spaceEvenly,
+          ),
+        ),
         Text('GameId: $gameId'),
-        for (var player in playersInfo) Text('Player: ${player[1]} Score: ${player[2]} State: ${player[3]}'),
       ],
-    );
-
-    Widget gameLobbyBlock = Wrap(
-      children: [
-        for (var playerIdx = 0; playerIdx < playersInfo.length; playerIdx++) Column(
-          children: [
-            Text(playersInfo[playerIdx][1]),
-            Image.asset('assets/images/pi_${(playerIdx % 10) + 1}.png'),
-          ]
-        )
-      ]
     );
 
     Widget gameVizBlock = Stack(
@@ -243,7 +245,9 @@ class _MyHomePageState extends State<MyHomePage> {
               onPressed: () {answerQuestion(answerIdx);},
               child: score < questions.length ? Image.memory(questions[score][answerIdx + 1]) : const Text(''),
             ),
-          ]
+          ],
+          alignment: WrapAlignment.spaceEvenly,
+          spacing: 5,
         )
       ],
   );
@@ -253,6 +257,9 @@ class _MyHomePageState extends State<MyHomePage> {
       padding: const EdgeInsets.all(16.0),
       child: ListView(
         children: [
+          Center(
+            child: Image.asset('assets/images/logo.png', width: MediaQuery.of(context).size.width * 0.8),
+          ),
           if (logicalState == 'NoGame') MenuForm(
             onGameCreated: (_gameId, _playerId, _playerName, _questions) {
               setState(() {
@@ -274,7 +281,6 @@ class _MyHomePageState extends State<MyHomePage> {
             },
             serverUrl: serverUrl,
           ),
-          if (logicalState != 'NoGame') gameInfoBlock,
           if (logicalState == 'GameCreated' || logicalState == 'GameJoined') gameLobbyBlock,
           if (logicalState == 'GameCreated') ElevatedButton(
             onPressed: () {
