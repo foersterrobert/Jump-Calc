@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:async';
@@ -34,6 +35,7 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   Timer? fetchTimer;
+  Random random = Random();
   int score = 0;
   String logicalState = 'NoGame';
   int gameId = 0;
@@ -51,6 +53,7 @@ class _MyHomePageState extends State<MyHomePage> {
     [0.65, 0.3],
     [0.78, 0.2185],
   ];
+  int? characterIdx;
 
   Future<void> startGame() async {
       final response = await http.patch(Uri.parse('$serverUrl/player/$gameId'));
@@ -194,6 +197,7 @@ class _MyHomePageState extends State<MyHomePage> {
   void initState() {
     super.initState();
     fetchTimer = Timer.periodic(const Duration(seconds: 1), (Timer t) => getState());
+    characterIdx = random.nextInt(10) + 1;
   }
 
   @override
@@ -204,6 +208,21 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
+
+    Widget characterBlock = Center(
+      child: Column(
+        children: [
+          Image.asset('assets/images/pi_$characterIdx.png', width: MediaQuery.of(context).size.width * 0.3, fit: BoxFit.fitWidth),
+          ElevatedButton(
+            onPressed:() => setState(() {
+              characterIdx = random.nextInt(10) + 1;
+            }),
+            child: const Icon(Icons.refresh),
+          )
+        ],
+      ),
+    );
+
     Widget gameLobbyBlock = Column(
       children: [
         Padding(
@@ -229,30 +248,44 @@ class _MyHomePageState extends State<MyHomePage> {
         Stack(
         children: [
           Image.asset('assets/images/level.png'),
-          for (var playerIdx = 0; playerIdx < playersInfo.length; playerIdx++) Positioned(
-              left: scoreMap[playersInfo[playerIdx][2]][0] * MediaQuery.of(context).size.width,
-              top: scoreMap[playersInfo[playerIdx][2]][1] * MediaQuery.of(context).size.width * 0.646875,
-              child: Image.asset('assets/images/pi_${(playerIdx % 10) + 1}.png', width: MediaQuery.of(context).size.width * 0.08),
-            ),
-        ],
-      ),
-      if (playerState == 'alive')
-        Column(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            score < questions.length ? Image.memory(questions[score][0]) : const Text('Game Finished'),
-            Wrap(
-              children: [
-                for (var answerIdx = 0; answerIdx < 4; answerIdx++) ElevatedButton(
-                  onPressed: () {answerQuestion(answerIdx);},
-                  child: score < questions.length ? Image.memory(questions[score][answerIdx + 1]) : const Text(''),
+          for (var playerIdx = 0; playerIdx < playersInfo.length; playerIdx++) 
+            if (playersInfo[playerIdx][0] != playerId)
+              AnimatedPositioned(
+                  left: scoreMap[playersInfo[playerIdx][2]][0] * MediaQuery.of(context).size.width,
+                  top: scoreMap[playersInfo[playerIdx][2]][1] * MediaQuery.of(context).size.width * 0.646875,
+                  child: Image.asset('assets/images/pi_${(playerIdx % 10) + 1}.png', width: MediaQuery.of(context).size.width * 0.08),
+                  duration: const Duration(milliseconds: 500),
                 ),
+          AnimatedPositioned(
+                left: scoreMap[score][0] * MediaQuery.of(context).size.width + MediaQuery.of(context).size.width * 0.02,
+                top: scoreMap[score][1] * MediaQuery.of(context).size.width * 0.646875 + MediaQuery.of(context).size.width * 0.02,
+                child: Column(
+                  children: [
+                    Text(playerName),
+                    Image.asset('assets/images/pi_$characterIdx.png', width: MediaQuery.of(context).size.width * 0.08),
+                  ]
+                ),
+                duration: const Duration(milliseconds: 500),
+              )
+            ]
+          ),
+          if (playerState == 'alive')
+            Column(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                score < questions.length ? Image.memory(questions[score][0]) : const Text('Game Finished'),
+                Wrap(
+                  children: [
+                    for (var answerIdx = 0; answerIdx < 4; answerIdx++) ElevatedButton(
+                      onPressed: () {answerQuestion(answerIdx);},
+                      child: score < questions.length ? Image.memory(questions[score][answerIdx + 1]) : const Text(''),
+                    ),
+                  ],
+                  alignment: WrapAlignment.spaceEvenly,
+                  spacing: 5,
+                )
               ],
-              alignment: WrapAlignment.spaceEvenly,
-              spacing: 5,
-            )
-          ],
-        ),
+            ),
       ],
     );
 
@@ -264,6 +297,7 @@ class _MyHomePageState extends State<MyHomePage> {
           Center(
             child: Image.asset('assets/images/logo.png', width: MediaQuery.of(context).size.width * 0.8),
           ),
+          if (logicalState == 'NoGame') characterBlock,
           if (logicalState == 'NoGame') MenuForm(
             onGameCreated: (_gameId, _playerId, _playerName, _questions) {
               setState(() {
