@@ -224,33 +224,37 @@ class _MyHomePageState extends State<MyHomePage> {
       ],
     );
 
-    Widget gameVizBlock = Stack(
+    Widget gameQuizBlock = Column(
       children: [
-        Image.asset('assets/images/level.png'),
-        for (var playerIdx = 0; playerIdx < playersInfo.length; playerIdx++) Positioned(
-            left: scoreMap[playersInfo[playerIdx][2]][0] * MediaQuery.of(context).size.width,
-            top: scoreMap[playersInfo[playerIdx][2]][1] * MediaQuery.of(context).size.width * 0.646875,
-            child: Image.asset('assets/images/pi_${(playerIdx % 10) + 1}.png', width: MediaQuery.of(context).size.width * 0.08),
-          ),
+        Stack(
+        children: [
+          Image.asset('assets/images/level.png'),
+          for (var playerIdx = 0; playerIdx < playersInfo.length; playerIdx++) Positioned(
+              left: scoreMap[playersInfo[playerIdx][2]][0] * MediaQuery.of(context).size.width,
+              top: scoreMap[playersInfo[playerIdx][2]][1] * MediaQuery.of(context).size.width * 0.646875,
+              child: Image.asset('assets/images/pi_${(playerIdx % 10) + 1}.png', width: MediaQuery.of(context).size.width * 0.08),
+            ),
+        ],
+      ),
+      if (playerState == 'alive')
+        Column(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            score < questions.length ? Image.memory(questions[score][0]) : const Text('Game Finished'),
+            Wrap(
+              children: [
+                for (var answerIdx = 0; answerIdx < 4; answerIdx++) ElevatedButton(
+                  onPressed: () {answerQuestion(answerIdx);},
+                  child: score < questions.length ? Image.memory(questions[score][answerIdx + 1]) : const Text(''),
+                ),
+              ],
+              alignment: WrapAlignment.spaceEvenly,
+              spacing: 5,
+            )
+          ],
+        ),
       ],
     );
-
-    Widget quizBlock = Column(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: [
-        score < questions.length ? Image.memory(questions[score][0]) : const Text('Game Finished'),
-        Wrap(
-          children: [
-            for (var answerIdx = 0; answerIdx < 4; answerIdx++) ElevatedButton(
-              onPressed: () {answerQuestion(answerIdx);},
-              child: score < questions.length ? Image.memory(questions[score][answerIdx + 1]) : const Text(''),
-            ),
-          ],
-          alignment: WrapAlignment.spaceEvenly,
-          spacing: 5,
-        )
-      ],
-  );
 
   return Scaffold(
     body: Padding(
@@ -288,14 +292,15 @@ class _MyHomePageState extends State<MyHomePage> {
             },
             child: const Text('Start Game'),
           ),
-          // if game started and alive and score < 9 show quiz
-          if (logicalState == 'GameStarted' && playerState == 'alive') quizBlock,
-          if (logicalState == 'GameStarted') gameVizBlock,
+          if (logicalState == 'GameStarted') gameQuizBlock,
           if (logicalState != 'NoGame') ElevatedButton(
             onPressed: () {
               leaveGame();
             },
             child: const Text('Leave Game'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.pink,
+            ),
           ),
         ],
       ),
