@@ -229,12 +229,20 @@ class _MyHomePageState extends State<MyHomePage> {
           padding: const EdgeInsets.all(8.0),
           child: Wrap(
             children: [
-              for (var playerIdx = 0; playerIdx < playersInfo.length; playerIdx++) Column(
+              Column(
                 children: [
-                  Text(playersInfo[playerIdx][1]),
-                  Image.asset('assets/images/pi_${(playerIdx % 10) + 1}.png', width: MediaQuery.of(context).size.width * 0.22),
-                ]
-              )
+                    Text(playerName),
+                    Image.asset('assets/images/pi_$characterIdx.png', width: MediaQuery.of(context).size.width * 0.22),
+                  ]
+              ),
+              for (var playerIdx = 0; playerIdx < playersInfo.length; playerIdx++)
+                if (playersInfo[playerIdx][0] != playerId)
+                  Column(
+                    children: [
+                      Text(playersInfo[playerIdx][1]),
+                      Image.asset('assets/images/pi_${(playerIdx % 10) + 1}.png', width: MediaQuery.of(context).size.width * 0.22),
+                    ]
+                  )
             ],
             alignment: WrapAlignment.spaceEvenly,
           ),
@@ -253,16 +261,16 @@ class _MyHomePageState extends State<MyHomePage> {
               AnimatedPositioned(
                   left: scoreMap[playersInfo[playerIdx][2]][0] * MediaQuery.of(context).size.width,
                   top: scoreMap[playersInfo[playerIdx][2]][1] * MediaQuery.of(context).size.width * 0.646875,
-                  child: Image.asset('assets/images/pi_${(playerIdx % 10) + 1}.png', width: MediaQuery.of(context).size.width * 0.08),
+                  child: Image.asset('assets/images/pi_${(playerIdx % 10) + 1}.png', width: MediaQuery.of(context).size.width * 0.1),
                   duration: const Duration(milliseconds: 500),
                 ),
           AnimatedPositioned(
-                left: scoreMap[score][0] * MediaQuery.of(context).size.width + MediaQuery.of(context).size.width * 0.02,
-                top: scoreMap[score][1] * MediaQuery.of(context).size.width * 0.646875 + MediaQuery.of(context).size.width * 0.02,
+                left: scoreMap[score][0] * MediaQuery.of(context).size.width,
+                top: scoreMap[score][1] * MediaQuery.of(context).size.width * 0.646875 - MediaQuery.of(context).size.width * 0.07,
                 child: Column(
                   children: [
                     Text(playerName),
-                    Image.asset('assets/images/pi_$characterIdx.png', width: MediaQuery.of(context).size.width * 0.08),
+                    Image.asset('assets/images/pi_$characterIdx.png', width: MediaQuery.of(context).size.width * 0.1),
                   ]
                 ),
                 duration: const Duration(milliseconds: 500),
