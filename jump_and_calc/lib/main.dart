@@ -212,7 +212,7 @@ class _MyHomePageState extends State<MyHomePage> {
     Widget characterBlock = Center(
       child: Column(
         children: [
-          Image.asset('assets/images/pi_$characterIdx.png', width: MediaQuery.of(context).size.width * 0.3, fit: BoxFit.fitWidth),
+          Image.asset('assets/images/pi_${characterIdx}_large.png', width: MediaQuery.of(context).size.width * 0.3, fit: BoxFit.fitWidth),
           ElevatedButton(
             onPressed:() => setState(() {
               characterIdx = random.nextInt(10) + 1;
