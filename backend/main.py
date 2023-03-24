@@ -17,10 +17,11 @@ def generate_questions():
 
 class Game(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    started = db.Column(db.Boolean, default=False)
+    state = db.Column(db.String(80), default="waiting")
     public = db.Column(db.Boolean, default=False)
     questions = db.Column(db.JSON, default=[])
     creatorName = db.Column(db.String(80), nullable=True)
+    winnerName = db.Column(db.String(80), nullable=True, default="")
     
     def __repr__(self):
         return f"Game(id={self.id})"
@@ -81,7 +82,7 @@ class GameResource(Resource):
                 "error": "game not found"
             }, 404
 
-        if game.started:
+        if game.state != "waiting":
             return {
                 "error": "game already started"
             }, 400
@@ -129,7 +130,7 @@ class GameResource(Resource):
     
     ### Get all public games
     def patch(self):
-        games = Game.query.filter_by(public=True, started=False).all()
+        games = Game.query.filter_by(public=True, state="waiting").all()
         games_info = [[game.id, game.creatorName] for game in games]
         return {
             "games": games_info
@@ -150,7 +151,7 @@ class PlayerResource(Resource):
                 "error": "game not found"
             }, 404
 
-        if game.started != True:
+        if game.state != "started":
             return {
                 "error": "game not started"
             }, 400
@@ -173,12 +174,15 @@ class PlayerResource(Resource):
 
         if player.score == len(game.questions):
             player.state = "won"
+            game.state = "ended"
+            game.winnerName = player.name
 
         db.session.commit()
         return {
             "score": player.score,
             "state": player.state,
-            "answer": int(game.questions[player.score].split("_")[1]) if player.score < len(game.questions) else None
+            "answer": int(game.questions[player.score].split("_")[1]) if player.score < len(game.questions) else None,
+            "winner": game.winnerName
         }
 
     ### Get Game
@@ -194,7 +198,7 @@ class PlayerResource(Resource):
         
         return {
             "game_id": game.id,
-            "started": game.started,
+            "game_state": game.state,
             "players": players_info
         }
     
@@ -205,11 +209,11 @@ class PlayerResource(Resource):
             return {
                 "error": "game not found"
             }, 404
-        if game.started:
+        if game.state != "waiting":
             return {
                 "error": "game already started"
             }, 400
-        game.started = True
+        game.state = "started"
         db.session.commit()
         return {
             "game_id": game.id
