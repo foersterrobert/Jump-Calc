@@ -56,17 +56,16 @@ class _MyHomePageState extends State<MyHomePage> {
   int? characterIdx;
 
   Future<void> startGame() async {
-      final response = await http.patch(Uri.parse('$serverUrl/player/$gameId'));
-      
-      if (response.statusCode == 200) {
-        setState(() {
-          logicalState = 'GameStarted';
-        });
-      } 
+    final response = await http.patch(Uri.parse('$serverUrl/player/$gameId'));
+    
+    if (response.statusCode == 200) {
+      setState(() {
+        logicalState = 'GameStarted';
+      });
+    } 
   }
 
   Future<void> leaveGame() async {
-    final response = await http.delete(Uri.parse('$serverUrl/game/$playerId'));
     setState(() {
       score = 0;
       logicalState = 'NoGame';
@@ -78,6 +77,7 @@ class _MyHomePageState extends State<MyHomePage> {
       questions = [
         ];
     });
+    final response = await http.delete(Uri.parse('$serverUrl/game/$playerId'));
     }
 
   Future<void> answerQuestion(_answer) async {
@@ -175,15 +175,41 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Future<void> getState() async {
-    if (logicalState == 'NoGame') return;
+    if (logicalState == 'NoGame' || logicalState == 'GameOver') return;
     try {
       final response = await http.get(Uri.parse('$serverUrl/player/$gameId'));
       final responseJson = jsonDecode(response.body);
 
       if (response.statusCode == 200) {
         setState(() {
-          if (responseJson['started'] == true) {
+          if (responseJson['game_state'] == 'started') {
             logicalState = 'GameStarted';
+          }
+          if (responseJson['game_state'] == 'ended') {
+            logicalState = 'GameOver';
+            showDialog(
+              context: context,
+              builder: (BuildContext context) {
+                return AlertDialog(
+                  title: const Text('Game Over'),
+                  content: Column(
+                    children: [
+                      Text('Your score is ${responseJson['score']}\nCorrect answer is:'),
+                      Image.memory(questions[score][responseJson['answer'] + 1])
+                      ],
+                    mainAxisSize: MainAxisSize.min,
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                      child: const Text('OK'),
+                    ),
+                  ],
+                );
+              },
+            );
           }
           playersInfo = responseJson['players'];
         });
