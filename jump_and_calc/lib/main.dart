@@ -111,25 +111,6 @@ class _MyHomePageState extends State<MyHomePage> {
             },
           );
         }
-        if (responseJson['state'] == 'won') {
-          showDialog(
-            context: context,
-            builder: (BuildContext context) {
-              return AlertDialog(
-                title: const Text('You won!'),
-                content: Text('Your score is ${responseJson['score']}'),
-                actions: [
-                  TextButton(
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                    },
-                    child: const Text('OK'),
-                  ),
-                ],
-              );
-            },
-          );
-        }
         setState(() {
           score = responseJson['score'];
           playerState = responseJson['state'];
@@ -181,41 +162,33 @@ class _MyHomePageState extends State<MyHomePage> {
       final responseJson = jsonDecode(response.body);
 
       if (response.statusCode == 200) {
-        setState(() {
-          if (responseJson['game_state'] == 'started') {
-            logicalState = 'GameStarted';
-          }
-          if (responseJson['game_state'] == 'ended') {
-            logicalState = 'GameOver';
-            showDialog(
-              context: context,
-              builder: (BuildContext context) {
-                return AlertDialog(
-                  title: const Text('Game Over'),
-                  content: Column(
-                    children: [
-                      Text('Your score is ${responseJson['score']}\nCorrect answer is:'),
-                      Image.memory(questions[score][responseJson['answer'] + 1])
-                      ],
-                    mainAxisSize: MainAxisSize.min,
+        if (responseJson['game_state'] == 'Game Finished') {
+          showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: const Text('GameOver'),
+                content: Text(responseJson['winner'] + ' won!'),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                    child: const Text('OK'),
                   ),
-                  actions: [
-                    TextButton(
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                      },
-                      child: const Text('OK'),
-                    ),
-                  ],
-                );
-              },
-            );
-          }
+                ],
+              );
+            },
+          );
+        }
+        setState(() {
           playersInfo = responseJson['players'];
+          if (responseJson['game_state'] != 'waiting') {
+            logicalState = responseJson['game_state'];
+          }
         });
       }
     } catch (e) {
-
     }
   }
 
@@ -303,7 +276,7 @@ class _MyHomePageState extends State<MyHomePage> {
               )
             ]
           ),
-          if (playerState == 'alive')
+          if (playerState == 'alive' && logicalState == 'GameStarted')
             Column(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
@@ -360,7 +333,7 @@ class _MyHomePageState extends State<MyHomePage> {
             },
             child: const Text('Start Game'),
           ),
-          if (logicalState == 'GameStarted') gameQuizBlock,
+          if (logicalState == 'GameStarted' || logicalState == 'GameOver') gameQuizBlock,
           if (logicalState != 'NoGame') ElevatedButton(
             onPressed: () {
               leaveGame();

@@ -151,7 +151,7 @@ class PlayerResource(Resource):
                 "error": "game not found"
             }, 404
 
-        if game.state != "started":
+        if game.state != "GameStarted":
             return {
                 "error": "game not started"
             }, 400
@@ -174,15 +174,15 @@ class PlayerResource(Resource):
 
         if player.score == len(game.questions):
             player.state = "won"
-            game.state = "ended"
-            game.winnerName = player.name
+            game.state = "GameOver"
+            if game.winnerName == '':
+                game.winnerName = player.name
 
         db.session.commit()
         return {
             "score": player.score,
             "state": player.state,
             "answer": int(game.questions[player.score].split("_")[1]) if player.score < len(game.questions) else None,
-            "winner": game.winnerName
         }
 
     ### Get Game
@@ -199,7 +199,8 @@ class PlayerResource(Resource):
         return {
             "game_id": game.id,
             "game_state": game.state,
-            "players": players_info
+            "players": players_info,
+            "winner": game.winnerName
         }
     
     ### Start Game
@@ -213,7 +214,7 @@ class PlayerResource(Resource):
             return {
                 "error": "game already started"
             }, 400
-        game.state = "started"
+        game.state = "GameStarted"
         db.session.commit()
         return {
             "game_id": game.id
