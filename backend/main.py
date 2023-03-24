@@ -168,7 +168,6 @@ class PlayerResource(Resource):
 
         if int(game.questions[player.score].split("_")[1]) == answer:
             player.score += 1
-            print("correct")
         else:
             player.state = "dead"
 

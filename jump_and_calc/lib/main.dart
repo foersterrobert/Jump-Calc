@@ -77,7 +77,9 @@ class _MyHomePageState extends State<MyHomePage> {
       questions = [
         ];
     });
-    final response = await http.delete(Uri.parse('$serverUrl/game/$playerId'));
+    // final response = await http.delete(Uri.parse('$serverUrl/game/$playerId'));
+    // if (response.statusCode == 200) {
+    // }
     }
 
   Future<void> answerQuestion(_answer) async {
@@ -162,12 +164,18 @@ class _MyHomePageState extends State<MyHomePage> {
       final responseJson = jsonDecode(response.body);
 
       if (response.statusCode == 200) {
-        if (responseJson['game_state'] == 'Game Finished') {
+        if (responseJson['game_state'] == 'GameOver') {
+          setState(() {
+            playersInfo = responseJson['players'];
+            if (responseJson['game_state'] != 'waiting') {
+              logicalState = responseJson['game_state'];
+            }
+          });
           showDialog(
             context: context,
             builder: (BuildContext context) {
               return AlertDialog(
-                title: const Text('GameOver'),
+                title: const Text('Game Finished'),
                 content: Text(responseJson['winner'] + ' won!'),
                 actions: [
                   TextButton(
@@ -181,12 +189,6 @@ class _MyHomePageState extends State<MyHomePage> {
             },
           );
         }
-        setState(() {
-          playersInfo = responseJson['players'];
-          if (responseJson['game_state'] != 'waiting') {
-            logicalState = responseJson['game_state'];
-          }
-        });
       }
     } catch (e) {
     }
@@ -259,13 +261,13 @@ class _MyHomePageState extends State<MyHomePage> {
             if (playersInfo[playerIdx][0] != playerId)
               AnimatedPositioned(
                   left: scoreMap[playersInfo[playerIdx][2]][0] * MediaQuery.of(context).size.width,
-                  top: scoreMap[playersInfo[playerIdx][2]][1] * MediaQuery.of(context).size.width * 0.646875,
+                  top: playersInfo[playerIdx][3] != "dead" ? scoreMap[playersInfo[playerIdx][2]][1] * MediaQuery.of(context).size.width * 0.646875 : MediaQuery.of(context).size.width,
                   child: Image.asset('assets/images/pi_${(playerIdx % 10) + 1}.png', width: MediaQuery.of(context).size.width * 0.1),
                   duration: const Duration(milliseconds: 500),
                 ),
           AnimatedPositioned(
                 left: scoreMap[score][0] * MediaQuery.of(context).size.width,
-                top: scoreMap[score][1] * MediaQuery.of(context).size.width * 0.646875 - MediaQuery.of(context).size.width * 0.07,
+                top: playerState != "dead" ? scoreMap[score][1] * MediaQuery.of(context).size.width * 0.646875 - MediaQuery.of(context).size.width * 0.07 : MediaQuery.of(context).size.width,
                 child: Column(
                   children: [
                     Text(playerName),
