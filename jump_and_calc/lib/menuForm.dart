@@ -247,12 +247,11 @@ class _MenuFormState extends State<MenuForm> {
             child: const Text('Join Game'),
           ),
           if (_publicGames.isEmpty) const Text('No public games found'),
-          if (_publicGames.isNotEmpty) Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+          if (_publicGames.isNotEmpty) Wrap(
             children: [
               for (var game in _publicGames)
                 Padding(
-                  padding: const EdgeInsets.all(8.0),
+                  padding: const EdgeInsets.all(5.0),
                   child: ElevatedButton(
                     onPressed: () {
                       joinGame(game[0], _playerNameController.text);

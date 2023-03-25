@@ -164,13 +164,13 @@ class _MyHomePageState extends State<MyHomePage> {
       final responseJson = jsonDecode(response.body);
 
       if (response.statusCode == 200) {
+        setState(() {
+          playersInfo = responseJson['players'];
+          if (responseJson['game_state'] != 'waiting') {
+            logicalState = responseJson['game_state'];
+          }
+        });
         if (responseJson['game_state'] == 'GameOver') {
-          setState(() {
-            playersInfo = responseJson['players'];
-            if (responseJson['game_state'] != 'waiting') {
-              logicalState = responseJson['game_state'];
-            }
-          });
           showDialog(
             context: context,
             builder: (BuildContext context) {
@@ -247,7 +247,7 @@ class _MyHomePageState extends State<MyHomePage> {
             alignment: WrapAlignment.spaceEvenly,
           ),
         ),
-        Text('GameId: $gameId'),
+        Text('GameId: $gameId', style: const TextStyle(fontSize: 20)),
       ],
     );
 
@@ -256,16 +256,6 @@ class _MyHomePageState extends State<MyHomePage> {
         Stack(
         children: [
           Image.asset('assets/images/level.png'),
-          for (var playerIdx = 0; playerIdx < playersInfo.length; playerIdx++) 
-            if (playersInfo[playerIdx][0] != playerId)
-              AnimatedPositioned(
-                  left: scoreMap[playersInfo[playerIdx][2]][0] * MediaQuery.of(context).size.width,
-                  top: playersInfo[playerIdx][3] != "dead" ? scoreMap[playersInfo[playerIdx][2]][1] * MediaQuery.of(context).size.width * 0.646875 : scoreMap[0][1] * MediaQuery.of(context).size.width * 0.646875,
-                  child: Image.asset(
-                    playersInfo[playerIdx][3] != "dead" ? 'assets/images/pi_${(playerIdx % 10) + 1}.png' : 'assets/images/pi_X_${(playerIdx % 10) + 1}.png',
-                    width: MediaQuery.of(context).size.width * 0.1),
-                  duration: const Duration(milliseconds: 500),
-                ),
           AnimatedPositioned(
                 left: scoreMap[score][0] * MediaQuery.of(context).size.width,
                 top: playerState != "dead" ? scoreMap[score][1] * MediaQuery.of(context).size.width * 0.646875 - MediaQuery.of(context).size.width * 0.07 : scoreMap[0][1] * MediaQuery.of(context).size.width * 0.646875 - MediaQuery.of(context).size.width * 0.07,
@@ -278,7 +268,19 @@ class _MyHomePageState extends State<MyHomePage> {
                   ]
                 ),
                 duration: const Duration(milliseconds: 500),
-              )
+                curve: Curves.easeInOut,
+              ),
+          for (var playerIdx = 0; playerIdx < playersInfo.length; playerIdx++) 
+            if (playersInfo[playerIdx][0] != playerId)
+              AnimatedPositioned(
+                  left: scoreMap[playersInfo[playerIdx][2]][0] * MediaQuery.of(context).size.width,
+                  top: playersInfo[playerIdx][3] != "dead" ? MediaQuery.of(context).size.width * (scoreMap[playersInfo[playerIdx][2]][1] * 0.646875 + 0.04): MediaQuery.of(context).size.width * (scoreMap[0][1] *  0.646875 + 0.04),
+                  child: Image.asset(
+                    playersInfo[playerIdx][3] != "dead" ? 'assets/images/pi_${(playerIdx % 10) + 1}.png' : 'assets/images/pi_X_${(playerIdx % 10) + 1}.png',
+                    width: MediaQuery.of(context).size.width * 0.05),
+                  duration: const Duration(milliseconds: 500),
+                  curve: Curves.easeInOut,
+                ),
             ]
           ),
           if (playerState == 'alive' && logicalState == 'GameStarted')

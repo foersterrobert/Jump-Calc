@@ -12,7 +12,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
 db = SQLAlchemy(app)
 
 def generate_questions():
-    questions = random.choices(os.listdir("backend/processedImgs"), k=6)
+    questions = random.sample(os.listdir("backend/processedImgs"), k=6)
     return questions
 
 class Game(db.Model):
