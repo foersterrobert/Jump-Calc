@@ -209,7 +209,6 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-
     Widget characterBlock = Center(
       child: Column(
         children: [
@@ -261,17 +260,21 @@ class _MyHomePageState extends State<MyHomePage> {
             if (playersInfo[playerIdx][0] != playerId)
               AnimatedPositioned(
                   left: scoreMap[playersInfo[playerIdx][2]][0] * MediaQuery.of(context).size.width,
-                  top: playersInfo[playerIdx][3] != "dead" ? scoreMap[playersInfo[playerIdx][2]][1] * MediaQuery.of(context).size.width * 0.646875 : MediaQuery.of(context).size.width,
-                  child: Image.asset('assets/images/pi_${(playerIdx % 10) + 1}.png', width: MediaQuery.of(context).size.width * 0.1),
+                  top: playersInfo[playerIdx][3] != "dead" ? scoreMap[playersInfo[playerIdx][2]][1] * MediaQuery.of(context).size.width * 0.646875 : scoreMap[0][1] * MediaQuery.of(context).size.width * 0.646875,
+                  child: Image.asset(
+                    playersInfo[playerIdx][3] != "dead" ? 'assets/images/pi_${(playerIdx % 10) + 1}.png' : 'assets/images/pi_X_${(playerIdx % 10) + 1}.png',
+                    width: MediaQuery.of(context).size.width * 0.1),
                   duration: const Duration(milliseconds: 500),
                 ),
           AnimatedPositioned(
                 left: scoreMap[score][0] * MediaQuery.of(context).size.width,
-                top: playerState != "dead" ? scoreMap[score][1] * MediaQuery.of(context).size.width * 0.646875 - MediaQuery.of(context).size.width * 0.07 : MediaQuery.of(context).size.width,
+                top: playerState != "dead" ? scoreMap[score][1] * MediaQuery.of(context).size.width * 0.646875 - MediaQuery.of(context).size.width * 0.07 : scoreMap[0][1] * MediaQuery.of(context).size.width * 0.646875 - MediaQuery.of(context).size.width * 0.07,
                 child: Column(
                   children: [
                     Text(playerName),
-                    Image.asset('assets/images/pi_$characterIdx.png', width: MediaQuery.of(context).size.width * 0.1),
+                    Image.asset(
+                      playerState != "dead" ? 'assets/images/pi_$characterIdx.png' : 'assets/images/pi_X_$characterIdx.png', 
+                      width: MediaQuery.of(context).size.width * 0.1),
                   ]
                 ),
                 duration: const Duration(milliseconds: 500),
