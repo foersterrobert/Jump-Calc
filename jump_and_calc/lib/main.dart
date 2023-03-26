@@ -273,7 +273,7 @@ class _MyHomePageState extends State<MyHomePage> {
             for (var playerIdx = 0; playerIdx < playersInfo.length; playerIdx++) 
               if (playersInfo[playerIdx][0] != playerId)
                 AnimatedPositioned(
-                    left: MediaQuery.of(context).size.width * (scoreMap[playersInfo[playerIdx][2]][0] + 0.05 * (playerIdx / max(1, (playersInfo.length - 1)))),
+                    left: MediaQuery.of(context).size.width * (scoreMap[playersInfo[playerIdx][2]][0] + 0.04 * (playerIdx / max(1, (playersInfo.length - 1)))),
                     top: playersInfo[playerIdx][3] != "dead" ? MediaQuery.of(context).size.width * (scoreMap[playersInfo[playerIdx][2]][1] * 0.646875 + (0.1 - 1.2236842105263157 * 0.05)) : MediaQuery.of(context).size.width * (scoreMap[0][1] *  0.646875 + (0.1 - 1.2236842105263157 * 0.05)),
                     child: Image.asset(
                       playersInfo[playerIdx][3] != "dead" ? 'assets/images/pi_${(playerIdx % 10) + 1}.png' : 'assets/images/pi_X_${(playerIdx % 10) + 1}.png',
@@ -282,8 +282,8 @@ class _MyHomePageState extends State<MyHomePage> {
                     curve: Curves.easeInOut,
                   ),
             Positioned(
-              top: 0,
-              left: 0,
+              top: 0.15 * MediaQuery.of(context).size.width * 0.646875,
+              left: 0.04 * MediaQuery.of(context).size.width,
               child: Text('Score: $score', style: const TextStyle(fontSize: 20)),
             )
           ]
