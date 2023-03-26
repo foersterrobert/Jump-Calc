@@ -254,52 +254,57 @@ class _MyHomePageState extends State<MyHomePage> {
     Widget gameQuizBlock = Column(
       children: [
         Stack(
-        children: [
-          Image.asset('assets/images/level.png'),
-          AnimatedPositioned(
-                left: scoreMap[score][0] * MediaQuery.of(context).size.width,
-                top: playerState != "dead" ? scoreMap[score][1] * MediaQuery.of(context).size.width * 0.646875 - MediaQuery.of(context).size.width * 0.07 : scoreMap[0][1] * MediaQuery.of(context).size.width * 0.646875 - MediaQuery.of(context).size.width * 0.07,
-                child: Column(
-                  children: [
-                    Text(playerName),
-                    Image.asset(
-                      playerState != "dead" ? 'assets/images/pi_$characterIdx.png' : 'assets/images/pi_X_$characterIdx.png', 
-                      width: MediaQuery.of(context).size.width * 0.1),
-                  ]
-                ),
-                duration: const Duration(milliseconds: 500),
-                curve: Curves.easeInOut,
-              ),
-          for (var playerIdx = 0; playerIdx < playersInfo.length; playerIdx++) 
-            if (playersInfo[playerIdx][0] != playerId)
-              AnimatedPositioned(
-                  left: scoreMap[playersInfo[playerIdx][2]][0] * MediaQuery.of(context).size.width,
-                  top: playersInfo[playerIdx][3] != "dead" ? MediaQuery.of(context).size.width * (scoreMap[playersInfo[playerIdx][2]][1] * 0.646875 + 0.04): MediaQuery.of(context).size.width * (scoreMap[0][1] *  0.646875 + 0.04),
-                  child: Image.asset(
-                    playersInfo[playerIdx][3] != "dead" ? 'assets/images/pi_${(playerIdx % 10) + 1}.png' : 'assets/images/pi_X_${(playerIdx % 10) + 1}.png',
-                    width: MediaQuery.of(context).size.width * 0.05),
+          children: [
+            Image.asset('assets/images/level.png'),
+            AnimatedPositioned(
+                  left: scoreMap[score][0] * MediaQuery.of(context).size.width,
+                  top: playerState != "dead" ? MediaQuery.of(context).size.width * (scoreMap[score][1] * 0.646875 - 0.07) : MediaQuery.of(context).size.width * (scoreMap[0][1] * 0.646875 - 0.07),
+                  child: Column(
+                    children: [
+                      Text(playerName),
+                      Image.asset(
+                        playerState != "dead" ? 'assets/images/pi_$characterIdx.png' : 'assets/images/pi_X_$characterIdx.png', 
+                        width: MediaQuery.of(context).size.width * 0.1),
+                    ]
+                  ),
                   duration: const Duration(milliseconds: 500),
                   curve: Curves.easeInOut,
                 ),
-            ]
+            for (var playerIdx = 0; playerIdx < playersInfo.length; playerIdx++) 
+              if (playersInfo[playerIdx][0] != playerId)
+                AnimatedPositioned(
+                    left: MediaQuery.of(context).size.width * (scoreMap[playersInfo[playerIdx][2]][0] + 0.05 * (playerIdx / max(1, (playersInfo.length - 1)))),
+                    top: playersInfo[playerIdx][3] != "dead" ? MediaQuery.of(context).size.width * (scoreMap[playersInfo[playerIdx][2]][1] * 0.646875 + (0.1 - 1.2236842105263157 * 0.05)) : MediaQuery.of(context).size.width * (scoreMap[0][1] *  0.646875 + (0.1 - 1.2236842105263157 * 0.05)),
+                    child: Image.asset(
+                      playersInfo[playerIdx][3] != "dead" ? 'assets/images/pi_${(playerIdx % 10) + 1}.png' : 'assets/images/pi_X_${(playerIdx % 10) + 1}.png',
+                      width: MediaQuery.of(context).size.width * 0.05),
+                    duration: const Duration(milliseconds: 500),
+                    curve: Curves.easeInOut,
+                  ),
+            Positioned(
+              top: 0,
+              left: 0,
+              child: Text('Score: $score', style: const TextStyle(fontSize: 20)),
+            )
+          ]
+        ),
+        if (playerState == 'alive' && logicalState == 'GameStarted')
+          Column(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              score < questions.length ? Image.memory(questions[score][0]) : const Text('Game Finished'),
+              Wrap(
+                children: [
+                  for (var answerIdx = 0; answerIdx < 4; answerIdx++) ElevatedButton(
+                    onPressed: () {answerQuestion(answerIdx);},
+                    child: score < questions.length ? Image.memory(questions[score][answerIdx + 1]) : const Text(''),
+                  ),
+                ],
+                alignment: WrapAlignment.spaceEvenly,
+                spacing: 5,
+              )
+            ],
           ),
-          if (playerState == 'alive' && logicalState == 'GameStarted')
-            Column(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                score < questions.length ? Image.memory(questions[score][0]) : const Text('Game Finished'),
-                Wrap(
-                  children: [
-                    for (var answerIdx = 0; answerIdx < 4; answerIdx++) ElevatedButton(
-                      onPressed: () {answerQuestion(answerIdx);},
-                      child: score < questions.length ? Image.memory(questions[score][answerIdx + 1]) : const Text(''),
-                    ),
-                  ],
-                  alignment: WrapAlignment.spaceEvenly,
-                  spacing: 5,
-                )
-              ],
-            ),
       ],
     );
 
